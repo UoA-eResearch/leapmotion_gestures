@@ -1,0 +1,4 @@
+websocket_client
+wsaccel
+numpy
+pandas
