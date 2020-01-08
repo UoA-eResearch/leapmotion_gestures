@@ -4,13 +4,27 @@ import websocket
 import config
 import json
 import pandas as pd
+import random
 
 websocket_cache = {}
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 
+gestures = ['no gesture', 'thumbs up', 'fist shake', 'so so', 'open and close', 'pointing around', 'stop', 'shuffle over', 'come here']
+
 if __name__ == "__main__":
     frames = []
+    
+    # variables for gesture messages
+    gesturing = False
+    
+    message = ''
+    # frame at which user is notified of impending change
+    notify_frame = 0
+    # delay between notification and change
+    delay = 150
+    
+    
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -34,6 +48,7 @@ if __name__ == "__main__":
                             packed_frame = dict([(k,v) for k,v in frame.items() if type(v) in [int, float]])
                             packed_frame["device_index"] = i
                             packed_frame["device_mode"] = 0 if device["mode"] == "desktop" else 1
+                            packed_frame["Gesturing"] = int(gesturing)
                             for hand in frame["hands"]:
                                 left_or_right = hand["type"]
                                 for key, value in hand.items():
@@ -69,6 +84,21 @@ if __name__ == "__main__":
                             frames.append(packed_frame)
                             if len(frames) % 100 == 0:
                                 print(f"{len(frames)} frames captured")
+                            
+                            if gesturing == False and notify_frame < len(frames) + delay:
+                                if random.random() > 0.9991:
+                                    message = 'gesturing'
+                                    print('##### almost ' + message)
+                                    notify_frame = len(frames)
+                            elif gesturing == True:
+                                if random.random() > 0.9991:
+                                    message = 'not gesturing'
+                                    print('##### almost ' + message)
+                                    notify_frame = len(frames)
+                            if len(frames) == notify_frame + delay:
+                                gesturing = not gesturing
+                                print('##### ' + message)
+                            
     except KeyboardInterrupt:
         fn = input("Enter filename to save recording to: ")
         df = pd.DataFrame(frames)
