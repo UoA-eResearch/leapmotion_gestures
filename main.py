@@ -5,12 +5,15 @@ import config
 import json
 import pandas as pd
 import random
+import time
 
 websocket_cache = {}
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 
 gestures = ['no gesture', 'thumbs up', 'fist shake', 'so so', 'open and close', 'pointing around', 'stop', 'shuffle over', 'come here']
+current_gesture = 0
+change_time = time.time()
 
 if __name__ == "__main__":
     frames = []
@@ -48,7 +51,10 @@ if __name__ == "__main__":
                             packed_frame = dict([(k,v) for k,v in frame.items() if type(v) in [int, float]])
                             packed_frame["device_index"] = i
                             packed_frame["device_mode"] = 0 if device["mode"] == "desktop" else 1
-                            packed_frame["Gesturing"] = int(gesturing)
+                            # store variable indicating whether or not user is gesturing
+                            packed_frame["Gesturing"] = current_gesture == 0
+                            # store variable indicating gesture number
+                            packed_frame["Gesture"] = current_gesture
                             for hand in frame["hands"]:
                                 left_or_right = hand["type"]
                                 for key, value in hand.items():
@@ -82,22 +88,19 @@ if __name__ == "__main__":
                                     else:
                                         packed_frame["_".join((left_or_right, finger_name, key))] = value
                             frames.append(packed_frame)
-                            if len(frames) % 100 == 0:
+                            if len(frames) % 300 == 0:
                                 print(f"{len(frames)} frames captured")
                             
-                            if gesturing == False and notify_frame < len(frames) + delay:
-                                if random.random() > 0.9991:
-                                    message = 'gesturing'
-                                    print('##### almost ' + message)
-                                    notify_frame = len(frames)
-                            elif gesturing == True:
-                                if random.random() > 0.9991:
-                                    message = 'not gesturing'
-                                    print('##### almost ' + message)
-                                    notify_frame = len(frames)
-                            if len(frames) == notify_frame + delay:
-                                gesturing = not gesturing
-                                print('##### ' + message)
+                            if change_time < time.time():
+                                # schedule next change to be in roughly 4 seconds
+                                change_time = time.time() + 4 + random.uniform(-1,1)
+                                # if current gesture is non gesture, pick a random gesture
+                                if current_gesture == 0:
+                                    current_gesture = random.randint(1, len(gestures) - 1)
+                                else:
+                                    current_gesture = 0
+                                print('###### Start ' + gestures[current_gesture])
+
                             
     except KeyboardInterrupt:
         fn = input("Enter filename to save recording to: ")
