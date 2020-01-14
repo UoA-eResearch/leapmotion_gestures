@@ -92,11 +92,15 @@ def df2X_y(df, hand='right', standardize=True):
 
     """
     y = list(df['gesture'])
-    # select required columns, get rid of na rows
+    # drop columns for other hand, drop na rows 
+    len_with_na = len(df)
     df = df.filter(regex=hand).drop(columns=[hand + '_active']).dropna()
+    print(f'dropped {len_with_na - len(df)} of {len_with_na} rows with nans')
     # perform mean normalization and scaling for unit variance
     if standardize:
         df = (df - df.mean()) / df.std()
+        print(df.min(), df.max())
+
     return df.values, y
 
 
