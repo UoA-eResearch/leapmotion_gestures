@@ -11,7 +11,8 @@ websocket_cache = {}
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # possibilities: 'no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
-gestures = ['no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come']
+# note: the modes expect no_gesture to be in first place
+gestures = ['no_gesture', 'so_so']
 current_gesture = 0
 change_time = time.time()
 
@@ -27,8 +28,9 @@ if __name__ == "__main__":
     # delay between notification and change
     delay = 150
     
-    mode = int(input('Enter mode. 0 for alternating between gestures/non gestere. 1 for gesturing only. '))
-    
+    mode = int(input('Enter mode:\n0 for alternating between gestures (including non gesture)\n1 for alternating between gestures (without non gesture) \n2 for single gesture\n'))
+    if mode == 2:
+        gesture = input('Enter gesture name: ')
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -52,9 +54,13 @@ if __name__ == "__main__":
                             packed_frame = dict([(k,v) for k,v in frame.items() if type(v) in [int, float]])
                             packed_frame["device_index"] = i
                             packed_frame["device_mode"] = 0 if device["mode"] == "desktop" else 1
-                            # store variable indicating whether or not user is gesturing
-                            # store variable indicating gesture number
-                            packed_frame["gesture"] = gestures[current_gesture]
+
+                            # store variable indicating gesture
+                            if mode == 0 or mode == 1:
+                                packed_frame["gesture"] = gestures[current_gesture]
+                            else:
+                                packed_frame["gesture"] = gesture
+
                             for hand in frame["hands"]:
                                 left_or_right = hand["type"]
                                 for key, value in hand.items():
@@ -100,7 +106,7 @@ if __name__ == "__main__":
                                 else:
                                     current_gesture = 0
                                 print('###### Start ' + gestures[current_gesture])
-                            elif mode == 1 and change_time < time.time()
+                            elif mode == 1 and change_time < time.time():
                                 # schedule next change to be in roughly 4 seconds
                                 change_time = time.time() + 4 + random.uniform(-1,1)
                                 # change current gesture
