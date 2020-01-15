@@ -16,9 +16,10 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='VoI.txt', target_fps
     target_fps -- int, output fps. Every nth frame is taken to acheive this, n is calculated using average fps of file
 
     Note:
-    The VoI file shouldn't reference handedness for each of its chosen variables.
+    The VoI txt file shouldn't reference handedness for each of its chosen variables, or contain any
+    variables that won't work with 'left_' or 'right_' appended to the start of them.
     Assumes that 'gesture' is a column name, indicating the gesture being performed.
-    Error thrown when VoI contains invalid name does not specify which name is invalid.
+    The error thrown when VoI contains an invalid name does not specify which name is invalid. This is annoying!
 
     """
     # get the raw leap data from a csv file
@@ -38,6 +39,7 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='VoI.txt', target_fps
     raw = raw.iloc[::skip,:]
 
     print(f'mean fps: {mean_fps:.2f}')
+    print(f'target fps: {target_fps}')
     print(f'skipping every {skip} frames')
     
 
@@ -70,42 +72,64 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='VoI.txt', target_fps
 
     return df
 
+
 def split2examples(X, n_frames):
     """splits a list of frames up into sublist of length n_frames each
     
     Arguments:
     X -- list to be split up
-    n_frames -- length of each training example
+    n_frames -- int, length of each training example
 
     Note:
     Any trailing frames not long enough for a complete example will be dropped
     
     """
 
-    return [X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)]
+    return np.array([X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)])
 
 
-def df2X_y(df, hand='right', standardize=True):
-    """extract X and y from pandas data frame, drop nan rows, and normalize
-    
-    Note: purging na rows is a bit clumsy, results in sudden time jumps in the input
+def df2X_y(df, g2idx={'no_gesture': 0, 'so_so': 1}, hand='right', standardize=True):
+    """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
+
+    Arguments:
+    df -- a dataframe of leap motion capture data
+    g2idx -- dict mapping gesture names to integers
+    hand -- str, left or right
+
+    Returns:
+    df.values -- np array of shape (time steps, features), predictors for every time step
+    y -- np array of shape (time steps), with an int label for every time step
+
+    Note:
+    Purging na rows is a bit clumsy, it results in sudden time jumps in the input.
+    Ideally a single training example shouldn't contain such a jump.
 
     """
-    y = list(df['gesture'])
+    
     # drop columns for other hand, drop na rows 
     len_with_na = len(df)
-    df = df.filter(regex=hand).drop(columns=[hand + '_active']).dropna()
+    # filter to gesture + variables for hand of interest. drop hand_active variable.
+    df = df.filter(regex=hand+'|gesture').drop(columns=[hand + '_active']).dropna()
     print(f'dropped {len_with_na - len(df)} of {len_with_na} rows with nans')
+    # extract the gesture label after dropping nans
+    y = [g2idx[i] for i in df['gesture']]
+    df = df.drop(columns=['gesture'])
     # perform mean normalization and scaling for unit variance
     if standardize:
         df = (df - df.mean()) / df.std()
-        print(df.min(), df.max())
+        # get range for each variable, to check normalization:
+        # print(df.min(), df.max())
+    
 
-    return df.values, y
-
-
-
-
+    return df.values, np.array(y)
 
 
-#print(raw['right_armBasis_2'].head())
+def synced_shuffle(x, y):
+    """shuffles two numpy arrays in sync"""
+    state = np.random.get_state()
+    np.random.shuffle(x)
+    np.random.set_state(state)
+    np.random.shuffle(y)
+
+
+

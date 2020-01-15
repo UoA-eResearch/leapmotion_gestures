@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 import matplotlib.pyplot as plt
 
-def many2many_model(n_gestures=2, n_frames=300, n_features=21, rnn_units=32):
+def many2many(n_gestures=2, n_frames=300, n_features=21, rnn_units=32):
     """Model for predicting labels for a sequence of multiple gestures
 
     Arguments:
@@ -17,9 +17,16 @@ def many2many_model(n_gestures=2, n_frames=300, n_features=21, rnn_units=32):
 
     """
 
-    model = tf.keras.Sequential()
-    model.add(layers.LSTM(rnn_units, return_sequences=True, stateful=False, input_length=n_frames, input_dim=n_features))
-    model.add(layers.TimeDistributed(layers.Dense(n_gestures, activation='softmax')))
+    inputs = tf.keras.Input(shape=(n_frames,n_features))
+    # x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False))(x)
+    # x = layers.BatchNormalization()(x)
+    x = layers.LSTM(rnn_units, return_sequences=True)(inputs)
+    x = layers.Dense(n_gestures, activation='softmax')(x)
+    
+    outputs = x
+
+    model = tf.keras.Model(inputs=inputs, outputs=outputs, name='many2one')
+
     model.summary()
 
     return model
@@ -69,3 +76,16 @@ def plt_metric(history, metric='loss'):
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
+
+
+def plt_pred(y, pred):
+    """Plots truth labels vs predicted labels for an example"""
+    labels = np.argmax(np.squeeze(pred), axis=-1)
+    plt.plot(labels)
+    plt.plot(y)
+    plt.title('predicted vs labels')
+    plt.ylabel('label')
+    plt.xlabel('time step')
+    plt.legend(['predicted', 'labels'], loc='upper left')
+    plt.show()
+
