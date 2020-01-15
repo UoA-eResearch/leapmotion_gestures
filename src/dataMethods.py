@@ -131,5 +131,11 @@ def synced_shuffle(x, y):
     np.random.set_state(state)
     np.random.shuffle(y)
 
-
-
+def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
+        g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=250):
+    """all of the above: gets VoI, splits to X and y"""
+    df = CSV2VoI(raw_file=raw_file, VoI_file='VoI.txt', target_fps=target_fps)
+    X, y = df2X_y(df, g2idx)
+    X, y = split2examples(X, n_frames=n_frames), split2examples(y, n_frames=n_frames)
+    synced_shuffle(X, y)
+    return X, y
