@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import random
 import time
+import tensorflow as tf
 
 websocket_cache = {}
 
@@ -24,19 +25,25 @@ VoI = VoI.split()
 VoI.sort()
 v2idx = {'right_' + v: i for i, v in enumerate(VoI)}
 
+# setup for keeping track of frames
+# predictors used
+predictors = ['left_middle_bases_12']
+# no of frames to keep stored
+keep = 50
+# initialize frame storage
+frames = np.empty((keep,len(v2idx)))
+# total number of frames received
+frames_total = 0
+# no. captured
+frames_recorded = 0
+# how often to predict (in no. of frames)
+pred_interval = 25
+
+# load model to predict
+model = tf.keras.models.load_model('models/32HS2C.h5')
+
 if __name__ == "__main__":
-    # predictors used
-    predictors = ['left_middle_bases_12']
-    # no of frames to keep stored
-    keep = 100
-    # initialize frame storage
-    frames = np.empty((keep,len(v2idx)))
-    # total number of frames received
-    frames_total = 0
-    # no. captured
-    frames_recorded = 0
-    # how often to predict (in no. of frames)
-    pred_interval = 50
+
     
     message = ''
     # frame at which user is notified of impending change
@@ -134,7 +141,10 @@ if __name__ == "__main__":
                             # but first ensure there is a complete training example's worth of consecutive frames
                             if frames_recorded >= keep and frames_recorded % pred_interval == 0:
                                 example = np.concatenate((frames[frame_index:,:], frames[:frame_index,:]))
-                                print('example!')
+                                # feed example into model, and get a prediction
+                                pred = model.predict(np.expand_dims(example, axis=0))
+                                print(pred)
+
 
                             
     except KeyboardInterrupt:

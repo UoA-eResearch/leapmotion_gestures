@@ -88,7 +88,7 @@ def split2examples(X, n_frames):
     return np.array([X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)])
 
 
-def df2X_y(df, g2idx={'no_gesture': 0, 'so_so': 1}, hand='right', standardize=True):
+def df2X_y(df, g2idx={'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiking': 3}, hand='right', standardize=True):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
     Arguments:
