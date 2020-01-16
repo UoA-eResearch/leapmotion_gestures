@@ -9,10 +9,13 @@ import time
 
 websocket_cache = {}
 
+with open('gestures.txt') as f:
+    gestures = f.read()
+gestures = gestures.split()
+
+
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
-# possibilities: 'no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
 # note: the modes expect no_gesture to be in first place
-gestures = ['no_gesture', 'so_so']
 current_gesture = 0
 change_time = time.time()
 
@@ -28,9 +31,16 @@ if __name__ == "__main__":
     # delay between notification and change
     delay = 150
     
-    mode = int(input('Enter mode:\n0 for alternating between gestures (including non gesture)\n1 for alternating between gestures (without non gesture) \n2 for single gesture\n'))
+    mode = int(input('Enter mode:\n0 for alternating between gestures (including non gesture)\
+        \n1 for alternating between gestures (without non gesture)\
+        \n2 for single gesture\n'))
     if mode == 2:
-        gesture = input('Enter gesture name: ')
+        print('Available gestures:')
+        for i, g in enumerate(gestures):
+            print(f'{i}. {g}')
+        print()
+        gesture_n = int(input('Select gesture to record: '))
+        gesture = gestures[gesture_n]
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -103,9 +113,10 @@ if __name__ == "__main__":
                                 # if current gesture is non gesture, pick a random gesture
                                 if current_gesture == 0:
                                     current_gesture = random.randint(1, len(gestures) - 1)
+                                    print('###### Start ' + gestures[current_gesture])
                                 else:
                                     current_gesture = 0
-                                print('###### Start ' + gestures[current_gesture])
+                                    print('###### Stop gesturing')
                             elif mode == 1 and change_time < time.time():
                                 # schedule next change to be in roughly 4 seconds
                                 change_time = time.time() + 4 + random.uniform(-1,1)
