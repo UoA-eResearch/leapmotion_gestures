@@ -150,5 +150,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         fn = input("Enter filename to save recording to: ")
         df = pd.DataFrame(frames)
-        df.to_csv(f"recordings/{fn}.csv", index=False)
+        df.to_csv(f"data/recordings/{fn}.csv", index=False)
         print("Saved")

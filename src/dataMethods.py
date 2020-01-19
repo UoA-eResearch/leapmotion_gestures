@@ -73,22 +73,57 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='VoI.txt', target_fps
     return df
 
 
-def split2examples(X, n_frames):
-    """splits a list of frames up into sublist of length n_frames each
+def split2examples(X,y=[],n_frames=25):
+    """splits a list of frames and labels up into examples of length n_frames
     
     Arguments:
-    X -- list to be split up
+    X -- features to be split up
+    y -- labels to be split up
     n_frames -- int, length of each training example
 
     Note:
     Any trailing frames not long enough for a complete example will be dropped
     
     """
+    
+    # if there are no y labels, then just return X split up into n_frames length examples
+    if len(y) == 0:
+        return np.array([X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)])
+    
 
-    return np.array([X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)])
+    # each sublist contains two indices, for start and end of a gesture
+    Xsplit = [[0]]
+    # ysplit contains a label for each sublist in Xsplit
+    ysplit = [y[0]]
+    for i, g in enumerate(y):
+        # check if this frame is a different gestre
+        if g != ysplit[-1]:
+            # note down i - 1 as last index of previous gesture
+            Xsplit[-1].append(i-1)
+            # note down i as first index of current gesture
+            Xsplit.append([i])
+            ysplit.append(g)
+    Xsplit[-1].append(len(X)-1)
+
+    print(Xsplit)
+    print(ysplit)
+    # part 2: split up into examples
+    X_final = []
+    y_final = []
+    for i, g in enumerate(ysplit):
+        # for j in range of number of examples in this section of X
+        for j in range((Xsplit[i][1] - Xsplit[i][0] + 1)//n_frames):
+            example_start = Xsplit[i][0] + j * n_frames
+            example_end = example_start + n_frames
+            X_final.append(X[example_start:example_end])
+            y_final.append(g)
+    
+    return X_final, y_final
 
 
-def df2X_y(df, g2idx={'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiking': 3}, hand='right', standardize=True):
+
+
+def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiking': 3}, hand='right', standardize=True):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
     Arguments:
@@ -102,7 +137,7 @@ def df2X_y(df, g2idx={'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiking
 
     Note:
     Purging na rows is a bit clumsy, it results in sudden time jumps in the input.
-    Ideally a single training example shouldn't contain such a jump.
+    Ideally a single training example shouldn't contain such a jump, but this is likely rare.
 
     """
     

@@ -1,0 +1,8 @@
+no_gesture
+fist
+gun
+hitchhiking
+open_close
+pointing
+shuffle_over
+so_so
