@@ -6,8 +6,9 @@ Created on Tue Jan  7 12:11:33 2020
 """
 import numpy as np
 import pandas as pd
+import json
 
-def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='VoI.txt', target_fps=25):
+def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='params/VoI.txt', target_fps=25):
     """Turns a csv file of raw leap data into a pandas df containing gesture + variables of interest
     
     Attributes:
@@ -73,18 +74,25 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='VoI.txt', target_fps
     return df
 
 
-def split2examples(X,y=[],n_frames=25):
-    """splits a list of frames and labels up into examples of length n_frames
+def X_y2examples(X,y=[],n_frames=25):
+    """splits a contiguous list of frames and labels up into single gesture examples of length n_frames
     
     Arguments:
     X -- features to be split up
-    y -- labels to be split up
+    y -- labels for each frame
     n_frames -- int, length of each training example
+
+    Returns:
+    X_final -- np array of shape (examples, frames, features)
+    y_final -- np array of shape (examples), using integers to indicate gestures. I.e. not one hot.
 
     Note:
     Any trailing frames not long enough for a complete example will be dropped
     
     """
+    # # simple test case for split2examples
+    # X = [[0,1],[0,2],[0,3],[0,4],[1,1],[1,2],[1,3],[1,4],[3,1],[3,2],[3,3],[3,4],[4,1],[4,2]]
+    # y = [0,0,0,0,1,1,1,1,3,3,3,3,4,4]
     
     # if there are no y labels, then just return X split up into n_frames length examples
     if len(y) == 0:
@@ -104,9 +112,6 @@ def split2examples(X,y=[],n_frames=25):
             Xsplit.append([i])
             ysplit.append(g)
     Xsplit[-1].append(len(X)-1)
-
-    print(Xsplit)
-    print(ysplit)
     # part 2: split up into examples
     X_final = []
     y_final = []
@@ -118,7 +123,7 @@ def split2examples(X,y=[],n_frames=25):
             X_final.append(X[example_start:example_end])
             y_final.append(g)
     
-    return X_final, y_final
+    return np.array(X_final), np.array(y_final)
 
 
 
@@ -151,26 +156,36 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiki
     df = df.drop(columns=['gesture'])
     # perform mean normalization and scaling for unit variance
     if standardize:
-        df = (df - df.mean()) / df.std()
+        # use the dictionaries of means and stds for each variable
+        with open('params/means_dict.json', 'r') as f:
+            means_dict = json.load(f)
+            for col in df.columns:
+                df[col] = df[col] - means_dict[col]
+        with open('params/stds_dict.json', 'r') as f:
+            stds_dict = json.load(f)
+            for col in df.columns:
+                df[col] = df[col] / stds_dict[col]
         # get range for each variable, to check normalization:
-        # print(df.min(), df.max())
-    
+    # print(df.min(), df.max())
+    # need to make sure that columns are in alphabetical order, so that model training and deployment accord with one another
+    df = df.reindex(sorted(df.columns), axis=1)
+    print(df.columns)
 
     return df.values, np.array(y)
 
 
 def synced_shuffle(x, y):
-    """shuffles two numpy arrays in sync"""
+    '''shuffles two numpy arrays in sync'''
     state = np.random.get_state()
     np.random.shuffle(x)
     np.random.set_state(state)
     np.random.shuffle(y)
 
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=250):
+        g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
     """all of the above: gets VoI, splits to X and y"""
-    df = CSV2VoI(raw_file=raw_file, VoI_file='VoI.txt', target_fps=target_fps)
+    df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
     X, y = df2X_y(df, g2idx)
-    X, y = split2examples(X, n_frames=n_frames), split2examples(y, n_frames=n_frames)
+    X, y = X_y2examples(X, y=y, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y

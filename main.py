@@ -14,22 +14,40 @@ websocket_cache = {}
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # possibilities: 'no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
 # note: the modes expect no_gesture to be in first place
-gestures = ['no_gesture', 'so_so', 'open_close', 'shuffle_over', 'no']
+
 current_gesture = 0
 change_time = time.time()
 
 # mapping of variable names to feature indexes
-with open('VoI.txt', 'r') as f:
+with open('params/VoI.txt', 'r') as f:
     VoI = f.read()
 VoI = VoI.split()
+# always have variables in alphabetical order
 VoI.sort()
 v2idx = {'right_' + v: i for i, v in enumerate(VoI)}
+
+print(v2idx)
+
+# mapping of gestures to integers
+with open('params/gestures.txt') as f:
+    gestures = f.read()
+    gestures = gestures.split()
+
+g2idx = {g: i for i, g in enumerate(gestures)}
+idx2g = {i: g for i, g in enumerate(gestures)}
+
+
+# get mean and standard deviation dictionaries
+with open('params/means_dict.json', 'r') as f:
+    means_dict = json.load(f)
+with open('params/stds_dict.json', 'r') as f:
+    stds_dict = json.load(f)
 
 # setup for keeping track of frames
 # predictors used
 predictors = ['left_middle_bases_12']
 # no of frames to keep stored
-keep = 50
+keep = 25
 # initialize frame storage
 frames = np.empty((keep,len(v2idx)))
 # total number of frames received
@@ -37,10 +55,10 @@ frames_total = 0
 # no. captured
 frames_recorded = 0
 # how often to predict (in no. of frames)
-pred_interval = 25
+pred_interval = 13
 
 # load model to predict
-model = tf.keras.models.load_model('models/32HS2C.h5')
+model = tf.keras.models.load_model('models/32HS8C.h5')
 
 if __name__ == "__main__":
 
@@ -50,10 +68,7 @@ if __name__ == "__main__":
     notify_frame = 0
     # delay between notification and change
     delay = 150
-    
-    mode = int(input('Enter mode:\n0 for alternating between gestures (including non gesture)\n1 for alternating between gestures (without non gesture) \n2 for single gesture\n'))
-    if mode == 2:
-        gesture = input('Enter gesture name: ')
+
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -83,12 +98,6 @@ if __name__ == "__main__":
                             packed_frame = dict([(k,v) for k,v in frame.items() if type(v) in [int, float]])
                             packed_frame["device_index"] = i
                             packed_frame["device_mode"] = 0 if device["mode"] == "desktop" else 1
-
-                            # store variable indicating gesture
-                            if mode == 0 or mode == 1:
-                                packed_frame["gesture"] = gestures[current_gesture]
-                            else:
-                                packed_frame["gesture"] = gesture
 
                             for hand in frame["hands"]:
                                 left_or_right = hand["type"]
@@ -129,7 +138,7 @@ if __name__ == "__main__":
                             try:
                                 # using the variable name to id mapping dict, update the np array containing the frames
                                 for v, i in v2idx.items():
-                                    frames[frame_index, i] = packed_frame[v]
+                                    frames[frame_index, i] = (packed_frame[v] - means_dict[v]) / stds_dict[v]
                                 # print(frames[frame_index,0])
                             except:
                                 # if the above fails, then we can't record the frame
@@ -144,6 +153,7 @@ if __name__ == "__main__":
                                 # feed example into model, and get a prediction
                                 pred = model.predict(np.expand_dims(example, axis=0))
                                 print(pred)
+                                print(idx2g[np.argmax(pred)])
 
 
                             
