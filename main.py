@@ -43,22 +43,28 @@ with open('params/means_dict.json', 'r') as f:
 with open('params/stds_dict.json', 'r') as f:
     stds_dict = json.load(f)
 
+# load the prediction model
+model = tf.keras.models.load_model('models/20HS8C.h5')
+# no of frames to keep stored, set to number of time steps required by model
+keep = model.input.shape[-2]
+# how often to make a prediction (in frames)
+# for now, just set to same frequency as keep
+pred_interval = 30
+
 # setup for keeping track of frames
 # predictors used
 predictors = ['left_middle_bases_12']
-# no of frames to keep stored
-keep = 25
+
 # initialize frame storage
 frames = np.empty((keep,len(v2idx)))
 # total number of frames received
 frames_total = 0
 # no. captured
 frames_recorded = 0
-# how often to predict (in no. of frames)
-pred_interval = 13
 
-# load model to predict
-model = tf.keras.models.load_model('models/32HS8C.h5')
+
+
+
 
 if __name__ == "__main__":
 

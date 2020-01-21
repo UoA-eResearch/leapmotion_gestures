@@ -74,7 +74,7 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='params/VoI.txt', tar
     return df
 
 
-def X_y2examples(X,y=[],n_frames=25):
+def X_y2examples(X,y=[],n_frames=30):
     """splits a contiguous list of frames and labels up into single gesture examples of length n_frames
     
     Arguments:
@@ -159,17 +159,16 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiki
         # use the dictionaries of means and stds for each variable
         with open('params/means_dict.json', 'r') as f:
             means_dict = json.load(f)
-            for col in df.columns:
-                df[col] = df[col] - means_dict[col]
+        for col in df.columns:
+            df[col] = df[col] - means_dict[col]
         with open('params/stds_dict.json', 'r') as f:
             stds_dict = json.load(f)
-            for col in df.columns:
-                df[col] = df[col] / stds_dict[col]
+        for col in df.columns:
+            df[col] = df[col] / stds_dict[col]
         # get range for each variable, to check normalization:
     # print(df.min(), df.max())
     # need to make sure that columns are in alphabetical order, so that model training and deployment accord with one another
     df = df.reindex(sorted(df.columns), axis=1)
-    print(df.columns)
 
     return df.values, np.array(y)
 
@@ -185,7 +184,23 @@ def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
         g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
     """all of the above: gets VoI, splits to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
-    X, y = df2X_y(df, g2idx)
-    X, y = X_y2examples(X, y=y, n_frames=n_frames)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx)
+    X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
+    synced_shuffle(X, y)
+    return X, y
+
+
+def folder2examples(folder='data/loops/', target_fps=25,
+        g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
+    '''all of the above: gets VoI, splits to X and y'''
+    # create empty data frame
+    df = pd.DataFrame()
+    # read in all training data from folder
+    for file in os.scandir(folder):
+        df2 = CSV2VoI(file)
+        df = pd.concat([df, df2], ignore_index=True)
+        df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx)
+    X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y
