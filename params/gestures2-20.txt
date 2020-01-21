@@ -1,0 +1,16 @@
+no_gesture
+call_me
+cheese
+fist
+gun
+hitchhiking
+ok
+open_close
+peace
+pointing
+shuffle_over
+so_so
+stop
+thumbs_up
+thumbs_down
+wave

@@ -5,11 +5,16 @@ import config
 import json
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import random
 import time
 import tensorflow as tf
 
 websocket_cache = {}
+
+good = mpimg.imread('data/images/thumbs_up.png')
+bad = mpimg.imread('data/images/thumbs_down.png')
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # possibilities: 'no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
@@ -22,22 +27,22 @@ change_time = time.time()
 with open('params/VoI.txt', 'r') as f:
     VoI = f.read()
 VoI = VoI.split()
-# always have variables in alphabetical order
+# IMPORTANT: always have variables in alphabetical order
+# the model expects to receive them that way
 VoI.sort()
 v2idx = {'right_' + v: i for i, v in enumerate(VoI)}
 
-print(v2idx)
-
-# mapping of gestures to integers
+# mapping of gestures to integers: need this for decoding model output
 with open('params/gestures.txt') as f:
     gestures = f.read()
     gestures = gestures.split()
-
+# gesture to id
 g2idx = {g: i for i, g in enumerate(gestures)}
+# id to gesture
 idx2g = {i: g for i, g in enumerate(gestures)}
 
-
 # get mean and standard deviation dictionaries
+# these are used for standardizing input to model
 with open('params/means_dict.json', 'r') as f:
     means_dict = json.load(f)
 with open('params/stds_dict.json', 'r') as f:
@@ -45,21 +50,18 @@ with open('params/stds_dict.json', 'r') as f:
 
 # load the prediction model
 model = tf.keras.models.load_model('models/20HS8C.h5')
-# no of frames to keep stored, set to number of time steps required by model
+# no of frames to keep stored in memory for prediction
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
 # for now, just set to same frequency as keep
 pred_interval = 30
 
-# setup for keeping track of frames
-# predictors used
-predictors = ['left_middle_bases_12']
-
 # initialize frame storage
 frames = np.empty((keep,len(v2idx)))
-# total number of frames received
+# keep track of total no. of frames received
 frames_total = 0
-# no. captured
+# no. captured continuously
+# this will be reset if there is an interruption to input
 frames_recorded = 0
 
 
@@ -67,14 +69,6 @@ frames_recorded = 0
 
 
 if __name__ == "__main__":
-
-    
-    message = ''
-    # frame at which user is notified of impending change
-    notify_frame = 0
-    # delay between notification and change
-    delay = 150
-
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -151,6 +145,8 @@ if __name__ == "__main__":
                                 # the continuity of the input is broken, and we restart
                                 frames_recorded = 0
                                 print('bad frames')
+                                imgplot = plt.imshow(bad)
+
 
                             # make a prediction every pred_interval number of frames
                             # but first ensure there is a complete training example's worth of consecutive frames
@@ -160,9 +156,7 @@ if __name__ == "__main__":
                                 pred = model.predict(np.expand_dims(example, axis=0))
                                 print(pred)
                                 print(idx2g[np.argmax(pred)])
-
-
-                            
+                                                       
     except KeyboardInterrupt:
         fn = input("Enter filename to save recording to: ")
         df = pd.DataFrame(frames)
