@@ -1,6 +1,5 @@
 no_gesture
 call_me
-cheese
 fist
 gun
 hitchhiking
