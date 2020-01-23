@@ -17,7 +17,7 @@ good = mpimg.imread('data/images/thumbs_up.png')
 bad = mpimg.imread('data/images/thumbs_down.png')
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
-# possibilities: 'no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
+# possibilities: 'no_gesture', 'maybe', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
 # note: the modes expect no_gesture to be in first place
 
 current_gesture = 0

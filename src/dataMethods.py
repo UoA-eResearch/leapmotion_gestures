@@ -128,7 +128,7 @@ def X_y2examples(X,y=[],n_frames=30):
 
 
 
-def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'hitchhiking': 3}, hand='right', standardize=True):
+def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hand='right', standardize=True):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
     Arguments:
@@ -182,7 +182,7 @@ def synced_shuffle(x, y):
 
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
         g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
-    """all of the above: gets VoI, splits to X and y"""
+    """all of the above: gets VoI, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
     X_contiguous, y_contiguous = df2X_y(df, g2idx)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
@@ -192,14 +192,13 @@ def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
 
 def folder2examples(folder='data/loops/', target_fps=25,
         g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
-    '''all of the above: gets VoI, splits to X and y'''
+    '''all of the above: gets VoI, splits a folder of CSVs to X and y'''
     # create empty data frame
     df = pd.DataFrame()
     # read in all training data from folder
     for file in os.scandir(folder):
-        df2 = CSV2VoI(file)
+        df2 = CSV2VoI(file, target_fps=target_fps)
         df = pd.concat([df, df2], ignore_index=True)
-        df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
     X_contiguous, y_contiguous = df2X_y(df, g2idx)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)

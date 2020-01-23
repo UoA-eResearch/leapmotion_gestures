@@ -13,10 +13,10 @@ import tkinter as tk
 import tensorflow as tf
 
 
-# possibilities: 'no_gesture', 'hitchhiking', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
+# possibilities: 'no_gesture', 'maybe', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
 # note: the modes expect no_gesture to be in first place
 
-
+# dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
 
 # root = tk.Tk()
 # good = tk.PhotoImage(file='data/images/thumbs_up.png')
@@ -33,21 +33,24 @@ class GUI:
         self.master = master
         master.title("GUI")
         self.gesture = tk.StringVar()
-        self.gesture.set('no_gesture')
-        self.good = tk.PhotoImage(file='data/images/thumbs_up.png')
-        self.bad = tk.PhotoImage(file='data/images/thumbs_down.png')
+        self.gesture.set('position hand')
+        self.img = tk.PhotoImage(file='data/images/dead.png')
+        self.bad = tk.PhotoImage(file='data/images/dead.png')
         self.label = tk.Label(master, image=self.bad)
-        # self.label.bind("<Button-1>", self.cycle_label_text)
         self.label.pack()
         self.label2 = tk.Label(master, font=("Helvetica", 44), textvariable=self.gesture)
-        self.label2.pack()
+        self.label2.pack(side=tk.BOTTOM)
+        
+        # self.label.place(relheight='0.5', relwidth='0.5')
+        # self.label2.pack(side=tk.BOTTOM)
         # self.start_button = tk.Button(master, text="start", command=self.live_predict)
         # self.start_button.pack()
-        self.close_button = tk.Button(master, text="Close", command=master.quit)
-        self.close_button.pack()
+        # self.close_button = tk.Button(master, text="Close", command=master.quit)
+        # self.close_button.pack()
                                     
 
 root = tk.Tk()
+root.geometry("500x500")
 gui = GUI(root)
 
 
@@ -62,7 +65,7 @@ VoI = VoI.split()
 VoI.sort()
 v2idx = {'right_' + v: i for i, v in enumerate(VoI)}
 # mapping of gestures to integers: need this for decoding model output
-with open('params/gesturesV1.txt') as f:
+with open('params/gesturesV2.txt') as f:
     gestures = f.read()
     gestures = gestures.split()
 # gesture to id
@@ -78,7 +81,7 @@ with open('params/stds_dict.json', 'r') as f:
     stds_dict = json.load(f)
 
 # load the prediction model
-model = tf.keras.models.load_model('models/32HS8C.h5')
+model = tf.keras.models.load_model('models/V2/25f_32hs_15c_2.h5')
 # no of frames to keep stored in memory for prediction
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
@@ -107,7 +110,6 @@ while True:
             websocket_cache[i] = ws
         elif frames_total % 4 != 0:
             # collect the frame, but don't unpack it
-            # not quite right...
             resp = websocket_cache[i].recv()
         else:
             # collect and unpack
@@ -169,6 +171,7 @@ while True:
                         frames_recorded = 0
                         print('bad frames')
                         gui.label.configure(image=gui.bad)
+                        gui.gesture.set('reposition hand')
 
 
                     # make a prediction every pred_interval number of frames
@@ -179,8 +182,9 @@ while True:
                         pred = model.predict(np.expand_dims(example, axis=0))
                         print(pred)
                         print(idx2g[np.argmax(pred)])
-                        gui.label.configure(image=gui.good)
-                        gui.gesture.set(idx2g[np.argmax(pred)])
+                        gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                        gui.label.configure(image=gui.img)
+                        gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
                         # gui.label.image=gui.good
     root.update_idletasks()
     root.update()

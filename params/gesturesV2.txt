@@ -2,7 +2,7 @@ no_gesture
 call_me
 fist
 gun
-hitchhiking
+maybe
 ok
 open_close
 peace

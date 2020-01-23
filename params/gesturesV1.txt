@@ -1,7 +1,7 @@
 no_gesture
 fist
 gun
-hitchhiking
+maybe
 open_close
 pointing
 shuffle_over
