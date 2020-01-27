@@ -32,7 +32,7 @@ def many2many(n_gestures=2, n_frames=300, n_features=21, rnn_units=32):
     return model
 
 
-def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bidirectional = False):
+def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bidirectional = False, n_layers=1):
     """Model for predicting labels for a single gesture
 
     Arguments:
@@ -40,16 +40,21 @@ def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bid
     n_frames -- int, number of frames per training example
     n_features -- int, number of features
     rnn_units -- int, size of LSTM hidden state
+    layers -- int, number of LSTM layers
 
     Note:
     Bidirectional
     """
 
     inputs = tf.keras.Input(shape=(n_frames,n_features))
-    if bidirectional == True:
-        x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False))(inputs)
-    else:
-        x = layers.LSTM(rnn_units, return_sequences=False, stateful=False)(inputs)
+    x = inputs
+    for i in range(n_layers):
+        if bidirectional == True:
+            x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False))(x)
+        else:
+            x = layers.LSTM(rnn_units, return_sequences=False, stateful=False)(x)
+    
+    
     x = layers.Dense(n_gestures, activation='softmax')(x)
     
     outputs = x

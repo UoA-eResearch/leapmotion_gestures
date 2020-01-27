@@ -1,0 +1,58 @@
+# Note that the order in which gestures appears determines their integer id.
+# If the order of these gestures is changed after a model is trained, this file will not work with that model.
+# Empty lines and lines beggining with '#' are ignored.
+
+#### original 15 gestures
+no_gesture
+call_me
+fist
+gun
+maybe
+ok
+open_close
+peace
+pointing
+shuffle_over
+so_so
+stop
+thumbs_up
+thumbs_down
+wave
+
+#### some additional 'well-defined' gestures
+middle_finger
+typing
+
+#### directional gestures
+left
+right
+up
+down
+forward
+back
+diagonal
+rotate
+
+#### shapes, sizes
+small
+big
+round
+square
+triangle
+
+#### some others
+rewind
+why
+expand
+shrink
+path
+wiggle
+multiple
+gather
+drop
+smooth
+push
+cover
+hold
+pause
+brush

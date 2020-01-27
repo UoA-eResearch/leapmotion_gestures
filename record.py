@@ -5,16 +5,14 @@ import config
 import json
 import pandas as pd
 import numpy as np
+from src.dataMethods import get_gestures
 import random
 import time
 
 websocket_cache = {}
 
-with open('params/gesturesV2.txt') as f:
-    gestures = f.read()
-gestures = gestures.split()
-
-
+# get gestures
+gestures, _, _ = get_gestures(version=2)
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # note: the modes expect no_gesture to be in first place
@@ -34,19 +32,24 @@ if __name__ == "__main__":
     message = ''
     # frame at which user is notified of impending change
     notify_frame = 0
-    
     mode = int(input('Select mode:\n1 for alternating between gestures randomly (short time per gesture)\
         \n2 for performing each gesture in succession (longer time for each gesture)\
-        \n3 for continuously performing a single gesture\n'))
-    if mode == 1 or mode == 2:
+        \n3 for alternating no gesture with other gestures in sequential order\
+        \n4 for continuously performing a single gesture'))
+    if mode == 1 or mode == 2 or mode == 3:
         # where are we up to in the sequence of gestures?
         seq_n = 0
         g_i = np.arange(len(gestures))
+        # seconds warning to receive before performing a gesture
+        warn_time = 1
         # delay between gestures
-        delay = 4.5
-        if mode == 2:
-            delay = 15
-    if mode == 3:
+        if mode == 1:
+            delay = 4
+        elif mode == 2:
+            delay = 5
+        elif mode == 3:
+            delay = 3.5
+    elif mode == 4:
         print('Available gestures:')
         for i, g in enumerate(gestures):
             print(f'{i}. {g}')
@@ -78,7 +81,7 @@ if __name__ == "__main__":
                             packed_frame["device_mode"] = 0 if device["mode"] == "desktop" else 1
 
                             # store variable indicating gesture
-                            if mode == 1 or mode == 2:
+                            if mode == 1 or mode == 2 or mode == 3:
                                 packed_frame["gesture"] = gestures[current_gesture]
                             else:
                                 packed_frame["gesture"] = gesture
@@ -129,12 +132,32 @@ if __name__ == "__main__":
                                 seq_n += 1
                             
                             # set the next gesture, and warn user of impending change
-                            elif (mode == 1 or mode == 2) and change_time - 1.5 < time.time() and warned == False:
+                            elif (mode == 1 or mode == 2) and change_time - 1 < time.time() and warned == False:
                                 if seq_n >= len(gestures): #check that we're not out of range
                                     seq_n = 0
                                     if mode == 1: #randomize
                                         np.random.shuffle(g_i)
                                 next_gesture = g_i[seq_n]
+                                print('Prepare to perform ' + gestures[next_gesture])
+                                # the user has been warned
+                                warned = True
+                            
+                            elif mode == 3 and change_time < time.time():
+                                current_gesture = next_gesture
+                                change_time = time.time() + delay # + random.uniform(-1,1) # can include a slight randomness in change time
+                                print('###### Start ' + gestures[current_gesture])
+                                warned = False
+                                if current_gesture == 0:
+                                    seq_n += 1
+                            
+                            # set the next gesture, and warn user of impending change
+                            elif mode == 3 and change_time - warn_time < time.time() and warned == False:
+                                if seq_n >= len(gestures): #check that we're not out of range
+                                    seq_n = 1
+                                if current_gesture == 0:
+                                    next_gesture = g_i[seq_n]
+                                else:
+                                    next_gesture = 0
                                 print('Prepare to perform ' + gestures[next_gesture])
                                 # the user has been warned
                                 warned = True

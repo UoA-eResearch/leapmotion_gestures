@@ -5,28 +5,13 @@ import config
 import json
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+from src.dataMethods import *
 import random
 import time
 import tkinter as tk
 import tensorflow as tf
 
-
-# possibilities: 'no_gesture', 'maybe', 'fistshake', 'so_so', 'open_close', 'pointing_around', 'stop', 'shuffle_over', 'come'
-# note: the modes expect no_gesture to be in first place
-
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
-
-# root = tk.Tk()
-# good = tk.PhotoImage(file='data/images/thumbs_up.png')
-# bad = tk.PhotoImage(file='data/images/thumbs_down.png')
-# panel = tk.Label(window, image=bad)
-# panel.pack()
-# window.mainloop()
-# print('got here')
-# panel.configure(image=bad)
-
 
 class GUI:
     def __init__(self, master):
@@ -41,14 +26,6 @@ class GUI:
         self.label2 = tk.Label(master, font=("Helvetica", 44), textvariable=self.gesture)
         self.label2.pack(side=tk.BOTTOM)
         
-        # self.label.place(relheight='0.5', relwidth='0.5')
-        # self.label2.pack(side=tk.BOTTOM)
-        # self.start_button = tk.Button(master, text="start", command=self.live_predict)
-        # self.start_button.pack()
-        # self.close_button = tk.Button(master, text="Close", command=master.quit)
-        # self.close_button.pack()
-                                    
-
 root = tk.Tk()
 root.geometry("500x500")
 gui = GUI(root)
@@ -65,13 +42,7 @@ VoI = VoI.split()
 VoI.sort()
 v2idx = {'right_' + v: i for i, v in enumerate(VoI)}
 # mapping of gestures to integers: need this for decoding model output
-with open('params/gesturesV2.txt') as f:
-    gestures = f.read()
-    gestures = gestures.split()
-# gesture to id
-g2idx = {g: i for i, g in enumerate(gestures)}
-# id to gesture
-idx2g = {i: g for i, g in enumerate(gestures)}
+gestures, g2idx, idx2g = get_gestures(version=2)
 
 # get mean and standard deviation dictionaries
 # these are used for standardizing input to model
@@ -182,9 +153,10 @@ while True:
                         pred = model.predict(np.expand_dims(example, axis=0))
                         print(pred)
                         print(idx2g[np.argmax(pred)])
-                        gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
-                        gui.label.configure(image=gui.img)
-                        gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
-                        # gui.label.image=gui.good
+                        if pred[0][np.argmax(pred)] > 0.6:
+                            gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                            gui.label.configure(image=gui.img)
+                            gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
+    # update the gui
     root.update_idletasks()
     root.update()

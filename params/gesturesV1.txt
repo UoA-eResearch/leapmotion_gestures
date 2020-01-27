@@ -1,3 +1,7 @@
+# Note that the order in which gestures appears determines their integer id.
+# If the order of these gestures is changed after a model is trained, that model will not work with this file.
+# Empty lines and lines beggining with '#' are ignored.
+
 no_gesture
 fist
 gun

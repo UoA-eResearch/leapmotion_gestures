@@ -7,6 +7,22 @@ Created on Tue Jan  7 12:11:33 2020
 import numpy as np
 import pandas as pd
 import json
+import os
+
+def get_gestures(version=3):
+    """fetches gestures, and dictionaries mapping between integers and gestures"""
+    with open(f'params/gesturesV{version}.txt') as f:
+        gestures = f.read()
+    # split into lines
+    gestures = gestures.split('\n')
+    # filter our any lines that are comments
+    gestures = [g for g in gestures if g != '' and g[0] != '#']
+    # get gesture to id dictionary
+    g2idx = {g: i for i, g in enumerate(gestures)}
+    # get id to gesture dictionary
+    idx2g = {i: g for i, g in enumerate(gestures)}
+    return gestures, g2idx, idx2g
+
 
 def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='params/VoI.txt', target_fps=25):
     """Turns a csv file of raw leap data into a pandas df containing gesture + variables of interest
@@ -126,8 +142,6 @@ def X_y2examples(X,y=[],n_frames=30):
     return np.array(X_final), np.array(y_final)
 
 
-
-
 def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hand='right', standardize=True):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
@@ -180,9 +194,10 @@ def synced_shuffle(x, y):
     np.random.set_state(state)
     np.random.shuffle(y)
 
+
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
         g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
-    """all of the above: gets VoI, splits a CSV to X and y"""
+    """all of the above: gets VoI, and using these, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
     X_contiguous, y_contiguous = df2X_y(df, g2idx)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
