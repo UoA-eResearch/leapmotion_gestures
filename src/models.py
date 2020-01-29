@@ -32,7 +32,7 @@ def many2many(n_gestures=2, n_frames=300, n_features=21, rnn_units=32):
     return model
 
 
-def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bidirectional = False, n_layers=1):
+def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bidirectional = False, n_layers=1, recurrent_dropout=0.0):
     """Model for predicting labels for a single gesture
 
     Arguments:
@@ -50,9 +50,9 @@ def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bid
     x = inputs
     for i in range(n_layers):
         if bidirectional == True:
-            x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False))(x)
+            x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False, recurrent_dropout=recurrent_dropout))(x)
         else:
-            x = layers.LSTM(rnn_units, return_sequences=False, stateful=False)(x)
+            x = layers.LSTM(rnn_units, return_sequences=False, stateful=False, recurrent_dropout=recurrent_dropout)(x)
     
     
     x = layers.Dense(n_gestures, activation='softmax')(x)

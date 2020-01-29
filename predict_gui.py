@@ -37,12 +37,16 @@ FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 with open('params/VoI.txt', 'r') as f:
     VoI = f.read()
 VoI = VoI.split()
+# which hands will be used in predicting?
+hands = ['left', 'right']
+# use these to get VoI, labelled by hand
+VoI = [hand + '_' + v for v in VoI for hand in hands]
 # IMPORTANT: always have variables in alphabetical order
 # the model expects to receive them that way
 VoI.sort()
-v2idx = {'right_' + v: i for i, v in enumerate(VoI)}
+v2idx = {v: i for i, v in enumerate(VoI)}
 # mapping of gestures to integers: need this for decoding model output
-gestures, g2idx, idx2g = get_gestures(version=2)
+gestures, g2idx, idx2g = get_gestures(version=0)
 
 # get mean and standard deviation dictionaries
 # these are used for standardizing input to model
@@ -52,7 +56,7 @@ with open('params/stds_dict.json', 'r') as f:
     stds_dict = json.load(f)
 
 # load the prediction model
-model = tf.keras.models.load_model('models/V2/25f_32hs_15c_2.h5')
+model = tf.keras.models.load_model('models/V0/35f_30hs.h5')
 # no of frames to keep stored in memory for prediction
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
@@ -154,7 +158,7 @@ while True:
                         print(pred)
                         print(idx2g[np.argmax(pred)])
                         if pred[0][np.argmax(pred)] > 0.6:
-                            gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                            # gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                             gui.label.configure(image=gui.img)
                             gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
     # update the gui

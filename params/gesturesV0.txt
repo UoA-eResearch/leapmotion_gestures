@@ -1,0 +1,16 @@
+# Note that the order in which gestures appears determines their integer id.
+# If the order of these gestures is changed after a model is trained, that model will not work with this file.
+# Empty lines and lines beggining with '#' are ignored.
+
+# version zero used for testing a subset of gestures
+
+#### shapes, sizes
+no_gesture
+small
+this_big
+# drawn shapes
+round
+square
+triangle
+# set position
+love_heart

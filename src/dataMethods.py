@@ -9,7 +9,7 @@ import pandas as pd
 import json
 import os
 
-def get_gestures(version=3):
+def get_gestures(version=2):
     """fetches gestures, and dictionaries mapping between integers and gestures"""
     with open(f'params/gesturesV{version}.txt') as f:
         gestures = f.read()
@@ -24,7 +24,7 @@ def get_gestures(version=3):
     return gestures, g2idx, idx2g
 
 
-def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='params/VoI.txt', target_fps=25):
+def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt', target_fps=25):
     """Turns a csv file of raw leap data into a pandas df containing gesture + variables of interest
     
     Attributes:
@@ -70,21 +70,19 @@ def CSV2VoI(raw_file='data/recordings/test1.csv', VoI_file='params/VoI.txt', tar
     if len(raw.filter(regex='left').columns) != 0:
         left = True
         VoI_list += ['left_' + v for v in VoI]
+        fraction_active = 1 - sum(raw['left_' + VoI[0]].isna()) / len(raw)
+        print(f'{fraction_active*100:.2f}% of rows contain valid LH data')
     # likewise, for right
     if len(raw.filter(regex='right').columns) != 0:
         right = True
         VoI_list += ['right_' + v for v in VoI]
+        fraction_active = 1 - sum(raw['right_' + VoI[0]].isna()) / len(raw)
+        print(f'{fraction_active*100:.2f}% of rows contain valid RH data')
 
     df = raw[::][VoI_list]
-    
-    # add variable indicating which hands are active, using first variable
-    # assumes that missing values have been filled by NAs
-    if left == True:
-        df['left_active'] = df['left_' + VoI[0]].isna()
-    if right == True:
-        df['right_active'] = df['right_' + VoI[0]].isna()
-    
+
     print('Found left hand data: ', left)
+    
     print('Found right hand data: ', right)
 
     return df
@@ -142,13 +140,13 @@ def X_y2examples(X,y=[],n_frames=30):
     return np.array(X_final), np.array(y_final)
 
 
-def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hand='right', standardize=True):
+def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hands=['right', 'left'], standardize=True):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
     Arguments:
     df -- a dataframe of leap motion capture data
     g2idx -- dict mapping gesture names to integers
-    hand -- str, left or right
+    hand -- list of hands to keep columns for
 
     Returns:
     df.values -- np array of shape (time steps, features), predictors for every time step
@@ -156,14 +154,23 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
 
     Note:
     Purging na rows is a bit clumsy, it results in sudden time jumps in the input.
-    Ideally a single training example shouldn't contain such a jump, but this is likely rare.
+    Ideally a single training example shouldn't contain such a jump. In any case, this is likely rare.
 
     """
     
     # drop columns for other hand, drop na rows 
     len_with_na = len(df)
-    # filter to gesture + variables for hand of interest. drop hand_active variable.
-    df = df.filter(regex=hand+'|gesture').drop(columns=[hand + '_active']).dropna()
+    # filter to gesture + variables for hands of interest
+    df = df.filter(regex='|'.join(hands + ['gesture']))
+    if len(hands) == 1:
+        # if we are only interested in one hand, then at this point the df will only contain cols for that hand
+        # if the other hand was active while the hand of interest wasn't, this will leave NA rows
+        df.dropna(inplace=True)
+    else:
+        # if both hands are required, then we replace NAs with zeros
+        df.fillna(value=0, inplace=True)
+        # make sure that data for both hands is present in the dataframe
+        assert df.filter(regex='left').shape[1] > 0 and df.filter(regex='right').shape[1] > 0, 'Dataframe contains columns for only one hand, but data for both is requested'
     print(f'dropped {len_with_na - len(df)} of {len_with_na} rows with nans')
     # extract the gesture label after dropping nans
     y = [g2idx[i] for i in df['gesture']]
@@ -181,7 +188,7 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
             df[col] = df[col] / stds_dict[col]
         # get range for each variable, to check normalization:
     # print(df.min(), df.max())
-    # need to make sure that columns are in alphabetical order, so that model training and deployment accord with one another
+    # make sure that columns are in alphabetical order, so that model training and deployment accord with one another
     df = df.reindex(sorted(df.columns), axis=1)
 
     return df.values, np.array(y)
@@ -196,10 +203,10 @@ def synced_shuffle(x, y):
 
 
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25):
+        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25):
     """all of the above: gets VoI, and using these, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
-    X_contiguous, y_contiguous = df2X_y(df, g2idx)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y

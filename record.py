@@ -12,7 +12,7 @@ import time
 websocket_cache = {}
 
 # get gestures
-gestures, _, _ = get_gestures(version=2)
+gestures, _, _ = get_gestures(version=0)
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # note: the modes expect no_gesture to be in first place
@@ -21,11 +21,12 @@ change_time = time.time()
 warned = False
 next_gesture = 0
 current_gesture = 0
-
+# whether or not to store captured frames
+record = True
 
 if __name__ == "__main__":
     frames = []
-    
+    frames_captured = 0
     # variables for gesture messages
     gesturing = False
     
@@ -35,7 +36,8 @@ if __name__ == "__main__":
     mode = int(input('Select mode:\n1 for alternating between gestures randomly (short time per gesture)\
         \n2 for performing each gesture in succession (longer time for each gesture)\
         \n3 for alternating no gesture with other gestures in sequential order\
-        \n4 for continuously performing a single gesture'))
+        \n4 for continuously performing a single gesture\
+        \n5 for viewing variables recorded'))
     if mode == 1 or mode == 2 or mode == 3:
         # where are we up to in the sequence of gestures?
         seq_n = 0
@@ -46,9 +48,9 @@ if __name__ == "__main__":
         if mode == 1:
             delay = 4
         elif mode == 2:
-            delay = 5
+            delay = 10
         elif mode == 3:
-            delay = 3.5
+            delay = 2.2
     elif mode == 4:
         print('Available gestures:')
         for i, g in enumerate(gestures):
@@ -56,6 +58,8 @@ if __name__ == "__main__":
         print()
         gesture_n = int(input('Select gesture to record: '))
         gesture = gestures[gesture_n]
+    elif mode == 5:
+        record = False
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -83,7 +87,7 @@ if __name__ == "__main__":
                             # store variable indicating gesture
                             if mode == 1 or mode == 2 or mode == 3:
                                 packed_frame["gesture"] = gestures[current_gesture]
-                            else:
+                            elif mode == 4:
                                 packed_frame["gesture"] = gesture
 
                             for hand in frame["hands"]:
@@ -118,7 +122,9 @@ if __name__ == "__main__":
                                             packed_frame["_".join((left_or_right, finger_name, key, str(j)))] = v
                                     else:
                                         packed_frame["_".join((left_or_right, finger_name, key))] = value
-                            frames.append(packed_frame)
+                            if record:
+                                frames.append(packed_frame)
+                            frames_captured += 1
 
                             # if len(frames) % 300 == 0:
                             #     print(f"{len(frames)} frames captured")
@@ -161,7 +167,15 @@ if __name__ == "__main__":
                                 print('Prepare to perform ' + gestures[next_gesture])
                                 # the user has been warned
                                 warned = True
-                                
+                            elif mode == 5 and frames_captured % 5 == 0:
+                                lwrist0 = packed_frame['left_wrist_0']
+                                lwrist1 = packed_frame['left_wrist_1']
+                                lwrist2 = packed_frame['left_wrist_2']
+                                rwrist0 = packed_frame['right_wrist_0']
+                                rwrist1 = packed_frame['right_wrist_1']
+                                rwrist2 = packed_frame['right_wrist_2']
+                                dist = np.sqrt((lwrist0 - rwrist0) ** 2 + (lwrist1 - rwrist1) ** 2 + (lwrist2 - rwrist2) ** 2) 
+                                print(f'left wrist: {lwrist0:.1f}, {lwrist1:.1f}, {lwrist2:.1f}, right: {rwrist0:.1f}, {rwrist1:.1f}, {rwrist2:.1f}, dist: {dist:.2f}')
 
                             
                                     

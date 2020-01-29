@@ -20,39 +20,64 @@ thumbs_down
 wave
 
 #### some additional 'well-defined' gestures
-middle_finger
 typing
-
-#### directional gestures
-left
-right
-up
-down
-forward
-back
-diagonal
-rotate
+counting
+finger_drawing
 
 #### shapes, sizes
 small
-big
+this_big
+# drawn shapes
 round
 square
 triangle
+# set position
+love_heart
 
-#### some others
-rewind
-why
-expand
-shrink
-path
-wiggle
+##### other gestures that can be performed continuously
 multiple
-gather
-drop
-smooth
-push
-cover
-hold
-pause
-brush
+smoothing_sand
+# like rotating a big object with both hands
+rotate
+# hands open, upwards
+why
+# path is like this_big, except with forwards and backwards movement
+path
+# Not necessarily leaves, but it helps to identify the action
+gather_leaves
+# replacing drop, place
+robotic_arm
+# as though drinking water
+cup_hands
+# not like finger drawing. Hand position is like holding pen or brush.
+drawing
+
+#### some others that can't be continuously recorded
+
+
+
+#### directional gestures. Maybe a separate classifier for these?
+# left
+# right
+# up
+# down
+# forward
+# back
+# diagonal
+
+#### drop temporarily, bring in when double leap motion sensor is running?
+# shrink, this is like gather leaves + some kind of holding at the end.
+# expand
+
+
+#### unsure
+# drop
+# cover
+# pause, maybe 'stop' already covers this?
+
+######## discarded ########
+# middle_finger
+# brush, replaced by drawing
+# push, replaced by gather leaves. Distinguising pushing vs gathering potentially difficult.
+# hold, replaced by cup hands (if I even understood 'hold' correctly to begin with) 
+# wiggle, replaced by finger tracing

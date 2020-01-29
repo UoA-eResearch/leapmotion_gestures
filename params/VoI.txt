@@ -19,3 +19,8 @@ palmVelocity_2
 pinchDistance
 grabAngle
 direction_0
+direction_1
+direction_2
+wrist_0
+wrist_1
+wrist_2
