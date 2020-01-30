@@ -24,6 +24,8 @@ next_gesture = 0
 current_gesture = 0
 # whether or not to store captured frames
 record = True
+# collect only every nth frame
+n = 1
 
 if __name__ == "__main__":
     frames = []
@@ -38,7 +40,7 @@ if __name__ == "__main__":
         \n2 for performing each gesture in succession (longer time for each gesture)\
         \n3 for alternating no gesture with other gestures in sequential order\
         \n4 for continuously performing a single gesture\
-        \n5 for viewing variables recorded'))
+        \n5 for viewing variables recorded\n'))
     if mode == 1 or mode == 2 or mode == 3:
         # where are we up to in the sequence of gestures?
         seq_n = 0
@@ -61,6 +63,8 @@ if __name__ == "__main__":
         gesture = gestures[gesture_n]
     elif mode == 5:
         record = False
+    else:
+        raise Exception('Input not a valid mode')
     try:
         while True:
             for i, device in enumerate(config.devices):
@@ -74,7 +78,7 @@ if __name__ == "__main__":
                     version = ws.recv()
                     print(i, version)
                     websocket_cache[i] = ws
-                elif frames_captured % 4 != 0:
+                elif frames_captured % n != 0:
                     # collect the frame, but don't unpack it
                     resp = websocket_cache[i].recv()
                 else:
@@ -88,6 +92,7 @@ if __name__ == "__main__":
                             packed_frame = dict([(k,v) for k,v in frame.items() if type(v) in [int, float]])
                             packed_frame["device_index"] = i
                             packed_frame["device_mode"] = 0 if device["mode"] == "desktop" else 1
+                            packed_frame["currentFrameRate"] /= n #adjust frame rate by the number we're actually capturing at the moment 
 
                             # store variable indicating gesture
                             if mode == 1 or mode == 2 or mode == 3:
@@ -172,11 +177,13 @@ if __name__ == "__main__":
                                 # the user has been warned
                                 warned = True
                             elif mode == 5:
-                                new_features = features.get_derived_features(packed_frame)
-                                new_features = {k: round(v, 1) for k, v in new_features.items()}
+                                if frames_captured % 80 == 0:
+                                    new_features = features.get_derived_features(packed_frame, hands=['right'])
+                                    new_features = {k: round(v, 1) for k, v in new_features.items()}
                                 # direction = np.round(np.array([packed_frame[f'right_direction_{i}'] for i in (0,1,2)]), 1)
-                                if frames_captured % 64 == 0:
+                                
                                     print(new_features)
+                                    # print(packed_frame['right_index_tipPosition_0'] - packed_frame['right_palmPosition_0'])
                                     
 
 

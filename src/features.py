@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def get_derived_features(frame, hands=['left','right']):
+def get_derived_features(frame, hands=['left', 'right']):
     """gets the distance to palm for each finger tip"""
     # get fingertip positions
     fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
@@ -10,8 +10,7 @@ def get_derived_features(frame, hands=['left','right']):
     features = {}
     for hand in hands:
         for i, finger in enumerate(fingers):
-            for j in range(3):
-                features[f'{hand}_f{i+1}'] = np.array([frame[f'{hand}_{finger}_tipPosition_{j}']])
+            features[f'{hand}_f{i+1}'] = np.array([frame[f'{hand}_{finger}_tipPosition_{j}'] for j in (0,1,2)])
     # old way, with list comprehension:
     # features = {f'f{i+1}': np.array([frame[f'{hand}_{finger}_tipalm_positionition_{j}'] for j in (0,1,2)]) for i, finger in enumerate(fingers)}
     for hand in hands:
@@ -23,11 +22,12 @@ def get_derived_features(frame, hands=['left','right']):
         # compute inter-fingertip distances
         interfinger_distances(new_features, features, hand)
         # compute palm-fingertip and fingertip to palm plain distances
-        finger_palm_distances(new_features, features, hand)
+        # finger_palm_distances(new_features, features, hand)
         finger_palm_plain_distances(new_features, features, hand)
     
     if len(hands) == 2:
         interpalm_distance(new_features, features)
+
     return new_features
 
 
@@ -56,7 +56,8 @@ def finger_palm_distances(new_features, features, hand):
 def finger_palm_plain_distances(new_features, features, hand):
     """Calculates distance to the palm plain for each finger"""
     for i in range(1,6):
-        new_features[f'{hand}_f{i}_p_plain'] = np.dot(features[f'{hand}_f{i}'] - features[f'{hand}_palm_position'], features[f'{hand}_palm_norm'])
+        new_features[f'{hand}_f{i}_p_plain'] = np.dot((features[f'{hand}_f{i}'] - features[f'{hand}_palm_position']), features[f'{hand}_palm_norm'])
+
 
 def interpalm_distance(new_features, features):
     """Calculates distance between center of each palm"""
