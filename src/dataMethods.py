@@ -6,6 +6,7 @@ Created on Tue Jan  7 12:11:33 2020
 """
 import numpy as np
 import pandas as pd
+import src.features as features
 import json
 import os
 
@@ -15,7 +16,7 @@ def get_gestures(version=2):
         gestures = f.read()
     # split into lines
     gestures = gestures.split('\n')
-    # filter our any lines that are comments
+    # filter out any blank lines or lines that are comments
     gestures = [g for g in gestures if g != '' and g[0] != '#']
     # get gesture to id dictionary
     g2idx = {g: i for i, g in enumerate(gestures)}
@@ -23,6 +24,15 @@ def get_gestures(version=2):
     idx2g = {i: g for i, g in enumerate(gestures)}
     return gestures, g2idx, idx2g
 
+def get_VoI():
+    """fetches variables of interest from the params/VoI.txt"""
+    with open('params/VoI.txt', 'r') as f:
+        VoI = f.read()
+    # split by lines
+    VoI = VoI.split('\n')
+    # filter out any blank lines or lines that are comments
+    VoI = [v for v in VoI if v != '' and v[0] != '#']
+    return VoI
 
 def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt', target_fps=25):
     """Turns a csv file of raw leap data into a pandas df containing gesture + variables of interest
@@ -44,9 +54,7 @@ def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt',
         raw = pd.read_csv(f)
 
     # get the variables of interest
-    with open(VoI_file, 'r') as f:
-        VoI = f.read()
-    VoI = VoI.split()
+    VoI = get_VoI()
 
     # get the average frame rate of the file
     mean_fps = raw['currentFrameRate'].mean()
@@ -186,7 +194,8 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
             stds_dict = json.load(f)
         for col in df.columns:
             df[col] = df[col] / stds_dict[col]
-        # get range for each variable, to check normalization:
+    
+    # get range for each variable, to check normalization:
     # print(df.min(), df.max())
     # make sure that columns are in alphabetical order, so that model training and deployment accord with one another
     df = df.reindex(sorted(df.columns), axis=1)

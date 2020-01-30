@@ -6,6 +6,7 @@ import json
 import pandas as pd
 import numpy as np
 from src.dataMethods import get_gestures
+import src.features as features
 import random
 import time
 
@@ -63,6 +64,7 @@ if __name__ == "__main__":
     try:
         while True:
             for i, device in enumerate(config.devices):
+                frames_captured += 1
                 if i not in websocket_cache:
                     ws = websocket.create_connection(device["url"])
                     if device["mode"] == "desktop":
@@ -72,6 +74,9 @@ if __name__ == "__main__":
                     version = ws.recv()
                     print(i, version)
                     websocket_cache[i] = ws
+                elif frames_captured % 4 != 0:
+                    # collect the frame, but don't unpack it
+                    resp = websocket_cache[i].recv()
                 else:
                     resp = websocket_cache[i].recv()
                     if "event" in resp:
@@ -124,7 +129,6 @@ if __name__ == "__main__":
                                         packed_frame["_".join((left_or_right, finger_name, key))] = value
                             if record:
                                 frames.append(packed_frame)
-                            frames_captured += 1
 
                             # if len(frames) % 300 == 0:
                             #     print(f"{len(frames)} frames captured")
@@ -167,17 +171,12 @@ if __name__ == "__main__":
                                 print('Prepare to perform ' + gestures[next_gesture])
                                 # the user has been warned
                                 warned = True
-                            elif mode == 5 and frames_captured % 5 == 0:
-                                lwrist0 = packed_frame['left_wrist_0']
-                                lwrist1 = packed_frame['left_wrist_1']
-                                lwrist2 = packed_frame['left_wrist_2']
-                                rwrist0 = packed_frame['right_wrist_0']
-                                rwrist1 = packed_frame['right_wrist_1']
-                                rwrist2 = packed_frame['right_wrist_2']
-                                dist = np.sqrt((lwrist0 - rwrist0) ** 2 + (lwrist1 - rwrist1) ** 2 + (lwrist2 - rwrist2) ** 2) 
-                                print(f'left wrist: {lwrist0:.1f}, {lwrist1:.1f}, {lwrist2:.1f}, right: {rwrist0:.1f}, {rwrist1:.1f}, {rwrist2:.1f}, dist: {dist:.2f}')
-
-                            
+                            elif mode == 5:
+                                new_features = features.get_derived_features(packed_frame)
+                                new_features = {k: round(v, 1) for k, v in new_features.items()}
+                                # direction = np.round(np.array([packed_frame[f'right_direction_{i}'] for i in (0,1,2)]), 1)
+                                if frames_captured % 64 == 0:
+                                    print(new_features)
                                     
 
 
