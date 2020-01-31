@@ -34,6 +34,13 @@ def get_VoI():
     VoI = [v for v in VoI if v != '' and v[0] != '#']
     return VoI
 
+def create_dicts(df):
+    """generates dictionaries for mean and std of columns, and saves them to params/"""
+    with open('params/means_dict.json', 'w') as f:
+        json.dump(df.mean().to_dict(), f)
+    with open('params/stds_dict.json', 'w') as f:
+        json.dump(df.std().to_dict(), f)
+
 def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt', target_fps=25):
     """Turns a csv file of raw leap data into a pandas df containing gesture + variables of interest
     
@@ -60,6 +67,9 @@ def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt',
     mean_fps = raw['currentFrameRate'].mean()
     # get number of frames to skip
     skip = round(mean_fps / target_fps)
+    if skip == 0:
+        print('WARNING: Average file frame rate is less that half the target frame rate. Taking every frame.')
+        skip = 1
     # replace raw df with skipped frame version
     raw = raw.iloc[::skip,:]
 
@@ -92,6 +102,8 @@ def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt',
     print('Found left hand data: ', left)
     
     print('Found right hand data: ', right)
+
+    df.reset_index(inplace=True)
 
     return df
 
@@ -148,13 +160,16 @@ def X_y2examples(X,y=[],n_frames=30):
     return np.array(X_final), np.array(y_final)
 
 
-def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hands=['right', 'left'], standardize=True):
+def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hands=['right', 'left'], derive_features=True, standardize=True):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
     Arguments:
     df -- a dataframe of leap motion capture data
     g2idx -- dict mapping gesture names to integers
     hand -- list of hands to keep columns for
+    derive_features -- indicates whether or not to derive more features
+    standardize -- indicates whether or not to standardize and center variables
+    create_dicts -- if true, new standard devi
 
     Returns:
     df.values -- np array of shape (time steps, features), predictors for every time step
@@ -175,14 +190,23 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
         # if the other hand was active while the hand of interest wasn't, this will leave NA rows
         df.dropna(inplace=True)
     else:
-        # if both hands are required, then we replace NAs with zeros
-        df.fillna(value=0, inplace=True)
+        # if both hands are required, then we replace NAs with the last observed valid value
+        df.fillna(method='ffill', inplace=True)
         # make sure that data for both hands is present in the dataframe
         assert df.filter(regex='left').shape[1] > 0 and df.filter(regex='right').shape[1] > 0, 'Dataframe contains columns for only one hand, but data for both is requested'
-    print(f'dropped {len_with_na - len(df)} of {len_with_na} rows with nans')
-    # extract the gesture label after dropping nans
+    print(f'dealt with {len_with_na - len(df)} of {len_with_na} rows with nans')
+
+    # at this point, we may wish to derive some more features
+    if derive_features:
+        df = pd.concat([df, pd.DataFrame.from_records(df.apply(features.get_derived_features, axis=1))], axis=1)
+
+    # extract the gesture label after dealing with nans
     y = [g2idx[i] for i in df['gesture']]
     df = df.drop(columns=['gesture'])
+
+    # # use create_dicts here if new derived variables have been created
+    # create_dicts(df)
+
     # perform mean normalization and scaling for unit variance
     if standardize:
         # use the dictionaries of means and stds for each variable
@@ -212,10 +236,10 @@ def synced_shuffle(x, y):
 
 
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25):
+        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True):
     """all of the above: gets VoI, and using these, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
-    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y
@@ -234,3 +258,5 @@ def folder2examples(folder='data/loops/', target_fps=25,
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y
+
+

@@ -25,6 +25,11 @@ palmNormal_0
 palmNormal_1
 palmNormal_2
 
+# position of palm
+palmPosition_0
+palmPosition_1
+palmPosition_2
+
 # direction the hand is pointing in
 direction_0
 direction_1
