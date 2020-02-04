@@ -1,0 +1,18 @@
+04/2
+Tried shape gestures, with categories as follows:
+#### shapes, sizes
+no_gesture
+small
+this_big
+# drawn shapes
+round_drawn
+square_drawn
+triangle_drawn
+# set position
+love_heart_set
+round_set
+triangle_set
+
+Found that 35 frames per example, hidden state size of 5, single layer model trained for 100 epochs does quite well, but the drawn shapes are quite difficult to distinguish from one another.
+
+Increasing to 45 frames didn't seem to do much. Making the model bidirectional helped a bit. 

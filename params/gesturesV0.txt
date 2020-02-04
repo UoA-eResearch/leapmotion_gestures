@@ -9,8 +9,10 @@ no_gesture
 small
 this_big
 # drawn shapes
-round
-square
-triangle
+round_drawn
+square_drawn
+triangle_drawn
 # set position
-love_heart
+love_heart_set
+round_set
+triangle_set

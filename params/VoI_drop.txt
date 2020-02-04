@@ -1,5 +1,4 @@
-# this file contains variables to be pulled from the CSV file
-# they will be needed later either as predictors, or to calculate derived features
+# this should contain a subset of VoI that will dropped when it comes to model training/prediction
 
 # fingertip positions
 index_tipPosition_0
@@ -28,14 +27,10 @@ palmNormal_0
 palmNormal_1
 palmNormal_2
 
-
-
 # direction the hand is pointing in
 direction_0
 direction_1
 direction_2
-
-
 
 ### these are needed for calculating wrist flexion angle
 # location of the wrist
@@ -48,14 +43,14 @@ elbow_0
 elbow_1
 elbow_2
 
+#### don't drop these ones ####
+# # distance between the thumb and index finger of a pinch hand pose
+# pinchDistance
 
-# position of palm
-palmPosition_0
-palmPosition_1
-palmPosition_2
+# # the angle between the fingers and the hand of a grab hand pose, in [0, pi]
+# grabAngle
 
-# distance between the thumb and index finger of a pinch hand pose
-pinchDistance
-
-# the angle between the fingers and the hand of a grab hand pose, in [0, pi]
-grabAngle
+# # position of palm
+# palmPosition_0
+# palmPosition_1
+# palmPosition_2

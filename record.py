@@ -24,8 +24,8 @@ next_gesture = 0
 current_gesture = 0
 # whether or not to store captured frames
 record = True
-# collect only every nth frame
-n = 80
+# collect only every nth frame, use this for lowering frame rate
+n = 4
 
 if __name__ == "__main__":
     frames = []
@@ -178,11 +178,12 @@ if __name__ == "__main__":
                                 warned = True
                             elif mode == 5:
                                 if frames_captured % 80 == 0:
-                                    new_features = features.get_derived_features(packed_frame)
+                                    new_features = features.get_derived_features(packed_frame, hands=['right'])
                                     new_features = {k: round(v, 1) for k, v in new_features.items()}
                                 # direction = np.round(np.array([packed_frame[f'right_direction_{i}'] for i in (0,1,2)]), 1)
                                 
-                                    print(new_features)
+                                    print(new_features['right_wrist_angle'])
+                                    # print(packed_frame['right_grabAngle'])
                                     # print(packed_frame['right_index_tipPosition_0'] - packed_frame['right_palmPosition_0'])
                                     
 

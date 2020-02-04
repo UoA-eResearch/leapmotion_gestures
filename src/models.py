@@ -50,9 +50,16 @@ def many2one_model(n_gestures=2, n_frames=120, n_features=21,  rnn_units=64, bid
     x = inputs
     for i in range(n_layers):
         if bidirectional == True:
-            x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False, recurrent_dropout=recurrent_dropout))(x)
+            if i == n_layers - 1: # check whether or not this is the last layer of LSTMs
+                # if this is the last layer, the return sequences should be false
+                x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=False, recurrent_dropout=recurrent_dropout))(x)
+            else:
+                x = layers.Bidirectional(layers.LSTM(rnn_units, return_sequences=True, recurrent_dropout=recurrent_dropout))(x)
         else:
-            x = layers.LSTM(rnn_units, return_sequences=False, stateful=False, recurrent_dropout=recurrent_dropout)(x)
+            if i == n_layers - 1: # check whether or not this is the last layer of LSTMs
+                x = layers.LSTM(rnn_units, return_sequences=False, stateful=False, recurrent_dropout=recurrent_dropout)(x)
+            else:
+                x = layers.LSTM(rnn_units, return_sequences=True, stateful=False, recurrent_dropout=recurrent_dropout)(x)
     
     
     x = layers.Dense(n_gestures, activation='softmax')(x)

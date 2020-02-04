@@ -22,7 +22,9 @@ wave
 #### some additional 'well-defined' gestures
 typing
 counting
-finger_drawing
+middle_finger
+finger_drawing_one_hand
+finger_drawing_two_hands
 
 #### shapes, sizes
 small
@@ -38,7 +40,7 @@ love_heart
 multiple
 smoothing_sand
 # like rotating a big object with both hands
-rotate
+driving
 # hands open, upwards
 why
 # path is like this_big, except with forwards and backwards movement
@@ -76,7 +78,7 @@ drawing
 # pause, maybe 'stop' already covers this?
 
 ######## discarded ########
-# middle_finger
+
 # brush, replaced by drawing
 # push, replaced by gather leaves. Distinguising pushing vs gathering potentially difficult.
 # hold, replaced by cup hands (if I even understood 'hold' correctly to begin with) 
