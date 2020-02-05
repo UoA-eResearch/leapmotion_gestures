@@ -23,23 +23,22 @@ wave
 typing
 counting
 middle_finger
+# these include shapes, lines etc.
 finger_drawing_one_hand
 finger_drawing_two_hands
 
 #### shapes, sizes
 small
 this_big
-# drawn shapes
-round
-square
-triangle
-# set position
-love_heart
+# set position shapes, drawn are just part of finger drawing
+triangle_set
+circle_set
+love_heart_set
 
 ##### other gestures that can be performed continuously
 multiple
 smoothing_sand
-# like rotating a big object with both hands
+# like using steering wheel
 driving
 # hands open, upwards
 why
@@ -47,18 +46,14 @@ why
 path
 # Not necessarily leaves, but it helps to identify the action
 gather_leaves
-# replacing drop, place
+# replaces drop/place, which were often performed together
 robotic_arm
 # as though drinking water
 cup_hands
 # not like finger drawing. Hand position is like holding pen or brush.
 drawing
 
-#### some others that can't be continuously recorded
-
-
-
-#### directional gestures. Maybe a separate classifier for these?
+#### directional gestures. Maybe a separate classifier for these? They occur all the time as parts of other gestures.
 # left
 # right
 # up
@@ -67,7 +62,7 @@ drawing
 # back
 # diagonal
 
-#### drop temporarily, bring in when double leap motion sensor is running?
+#### drop temporarily, bring in when double leap motion sensor is running? Or maybe ignore. These are also like parts of other gestures.
 # shrink, this is like gather leaves + some kind of holding at the end.
 # expand
 

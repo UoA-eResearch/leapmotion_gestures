@@ -180,7 +180,8 @@ def X_y2examples(X,y=[],n_frames=30, stride=None):
     return np.array(X_final), np.array(y_final)
 
 
-def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hands=['right', 'left'], derive_features=True, standardize=True, dicts_gen=False):
+def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hands=['right', 'left'],
+            derive_features=True, standardize=True, dicts_gen=False, mirror=False):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
 
     Arguments:
@@ -191,6 +192,7 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
     standardize -- bool, indicates whether or not to standardize and center variables
     create_dicts -- if true, new standard deviations and means dictionary are generated from the df, and saved to params/.
         needed if new features have been added to the model.
+    mirror -- if true, flips data so that left hand becomes right hand and vice versa
 
     Returns:
     df.values -- np array of shape (time steps, features), predictors for every time step
@@ -211,11 +213,19 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
         # if the other hand was active while the hand of interest wasn't, this will leave NA rows
         df.dropna(inplace=True)
     else:
-        # if both hands are required, then we replace NAs with the last observed valid value
+        # if both hands are required, then we replace nans with the last observed valid value
         df.fillna(method='ffill', inplace=True)
+        # the first rows might contain nans - remove these, then reset index
+        df.dropna(inplace=True)
+        df.reset_index(inplace=True, drop=True)
+
         # make sure that data for both hands is present in the dataframe
         assert df.filter(regex='left').shape[1] > 0 and df.filter(regex='right').shape[1] > 0, 'Dataframe contains columns for only one hand, but data for both is requested'
     print(f'dealt with {len_with_na - len(df)} of {len_with_na} rows with nans')
+
+    if mirror:
+        df = mirror_data(df)
+        print('Data successfully mirrored')
 
     # at this point, we may wish to derive some more features, and drop some of the original VoI
     if derive_features:
@@ -260,14 +270,25 @@ def synced_shuffle(x, y):
     np.random.shuffle(y)
 
 
+def mirror_data(df, hands=['left', 'right']):
+    """takes a data frame of gesture data and generates its mirror image: RH <-> LH"""
+    #### warning: this function MIGHT break if different VoI are used
+    # swap around left and right variables
+    df_flipped = df.copy()
+    df_flipped.columns = [col.replace('left', 'lft') for col in df_flipped.columns]
+    df_flipped.columns = [col.replace('right', 'left') for col in df_flipped.columns]
+    df_flipped.columns = [col.replace('lft', 'right') for col in df_flipped.columns]
+    df_flipped = df_flipped.apply(lambda x: -x if x.name[-1] == '0' else x, axis=0)
+    return df_flipped
+
 
 #### methods for combining the above together, to go straight from a CSVs to training examples
 
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True, dicts_gen=False):
+        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True, dicts_gen=False, mirror=False):
     """all of the above: gets VoI, and using these, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
-    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=mirror)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y

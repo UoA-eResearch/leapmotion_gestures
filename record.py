@@ -13,7 +13,7 @@ import time
 websocket_cache = {}
 
 # get gestures
-gestures, _, _ = get_gestures(version=0)
+gestures, _, _ = get_gestures(version=1)
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # note: the modes expect no_gesture to be in first place
