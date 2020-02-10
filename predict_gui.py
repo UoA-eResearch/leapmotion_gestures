@@ -32,23 +32,32 @@ root.geometry("500x500")
 gui = GUI(root)
 
 
+# load the prediction model
+model = tf.keras.models.load_model('models/V1/40f_5hs_RH.h5')
+# mapping of gestures to integers: need this for decoding model output
+gestures, g2idx, idx2g = get_gestures(version=1)
+# set whether or not to derive features and drop unused VoI
+derive_features = True
+
 websocket_cache = {}
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
-# Get the VoI that are used as predictors
-VoI = get_VoI()
-VoI_drop = get_VoI_drop()
-VoI_predictors = [v for v in VoI if v not in VoI_drop]
 # which hands will be used in predicting?
 hands = ['left', 'right']
-# use these to get VoI, labelled by hand
-VoI_predictors = [hand + '_' + v for v in VoI_predictors for hand in hands]
+# Get the VoI that are used as predictors
+VoI = get_VoI()
+if derive_features:
+    VoI_drop = get_VoI_drop()
+    VoI_predictors = [v for v in VoI if v not in VoI_drop]
+    # use these to get VoI, labelled by hand
+    VoI_predictors = [hand + '_' + v for v in VoI_predictors for hand in hands]
+else:
+    VoI = [hand + '_' + v for v in VoI for hand in hands]
+
 
 # IMPORTANT: always have variables in alphabetical order
 # the model expects to receive them that way
-VoI.sort()
-v2idx = {v: i for i, v in enumerate(VoI)}
-# mapping of gestures to integers: need this for decoding model output
-gestures, g2idx, idx2g = get_gestures(version=1)
+# VoI.sort()
+# v2idx = {v: i for i, v in enumerate(VoI)}
 
 # get mean and standard deviation dictionaries
 # these are used for standardizing input to model
@@ -57,8 +66,7 @@ with open('params/means_dict.json', 'r') as f:
 with open('params/stds_dict.json', 'r') as f:
     stds_dict = json.load(f)
 
-# load the prediction model
-model = tf.keras.models.load_model('models/V1/40f_5hs.h5')
+
 # no of frames to keep stored in memory for prediction
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
@@ -75,6 +83,7 @@ frames_recorded = 0
 
 # store previous frame, just in case a hand drops out, and we need to vill in values
 previous_frame = None
+# indicator the next successfully received frame will be the first
 first_two_handed_frame = True
 
 #capture every nth frame
@@ -84,6 +93,7 @@ while True:
     frames_total += 1
     
     packed_frame = collect_frame(frames_total, n, websocket_cache)
+
     if len(packed_frame) > 0:
         frames_recorded += 1
         frame_index = (frames_recorded - 1) % keep
@@ -101,23 +111,27 @@ while True:
 
             previous_frame = packed_frame.copy()
             # get the derived features
-            new_features = features.get_derived_features(packed_frame)
+            if derive_features:
+                new_features = features.get_derived_features(packed_frame)
+                packed_frame.update(new_features)
+            
             # if this is the first two handed frame, generate a sorted list of variables used for prediction, including derived features
             if first_two_handed_frame:
                 first_two_handed_frame = False
-                all_predictors = VoI_predictors + [pred for pred in new_features.keys()]
-                all_predictors.sort()
+                if derive_features:
+                    all_predictors = VoI_predictors + [pred for pred in new_features.keys()]
+                    all_predictors.sort()
+                else:
+                    all_predictors = sorted(VoI)
+                print(all_predictors)
             
-            # add the derived features to the packed frame
-            packed_frame.update(new_features)
-
             for i, p in enumerate(all_predictors):
                 frames[frame_index, i] = (packed_frame[p] - means_dict[p]) / stds_dict[p]
 
             # make a prediction every pred_interval number of frames
             # but first ensure there is a complete training example's worth of consecutive frames
             if frames_recorded >= keep and frames_recorded % pred_interval == 0:
-                example = np.concatenate((frames[frame_index:,:], frames[:frame_index,:]))
+                example = np.concatenate((frames[frame_index+1:,:], frames[:frame_index+1,:]))
                 # feed example into model, and get a prediction
                 pred = model.predict(np.expand_dims(example, axis=0))
                 print(pred)
@@ -128,5 +142,5 @@ while True:
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
     # update the gui
-    root.update_idletasks()
-    root.update()
+    # root.update_idletasks()
+    # root.update()

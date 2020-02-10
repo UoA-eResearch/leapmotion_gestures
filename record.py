@@ -27,7 +27,7 @@ current_gesture = 0
 # whether or not to store captured frames
 record = True
 # collect only every nth frame, use this for lowering frame rate
-n = 100
+n = 4
 
 if __name__ == "__main__":
     frames = []

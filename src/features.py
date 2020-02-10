@@ -15,8 +15,8 @@ def get_derived_features(frame, hands=['left', 'right']):
         features[f'{hand}_palm_norm'] = np.array([frame[f'{hand}_palmNormal_{i}'] for i in (0,1,2)])
         features[f'{hand}_palm_position'] = np.array([frame[f'{hand}_palmPosition_{i}'] for i in (0,1,2)])
         features[f'{hand}_wrist'] = np.array([frame[f'{hand}_wrist_{i}'] for i in (0,1,2)])
-        features[f'{hand}_elbow'] = np.array([frame[f'{hand}_elbow_{i}'] for i in (0,1,2)])
-        features[f'{hand}_palm_velocity'] = np.array([frame[f'{hand}_palmVelocity_{i}'] for i in (0,1,2)])
+        # features[f'{hand}_elbow'] = np.array([frame[f'{hand}_elbow_{i}'] for i in (0,1,2)])
+        # features[f'{hand}_palm_velocity'] = np.array([frame[f'{hand}_palmVelocity_{i}'] for i in (0,1,2)])
 
     # create dictionary of new features
     new_features = {}
@@ -25,15 +25,15 @@ def get_derived_features(frame, hands=['left', 'right']):
         adjacent_finger_distances(new_features, features, hand)
         finger_palm_distances(new_features, features, hand)
         finger_palm_plain_distances(new_features, features, hand)
-        wrist_angle(new_features, features, hand)
-        palm_velocity(new_features, features, hand)
+        # wrist_angle(new_features, features, hand)
+        # palm_velocity(new_features, features, hand)
         
     
     if len(hands) == 2:
         # compute between hand features
         interpalm_distance(new_features, features)
         interfinger_distances(new_features, features)
-        interpalm_angle(new_features, features)
+        # interpalm_angle(new_features, features)
 
     return new_features
 

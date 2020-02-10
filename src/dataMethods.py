@@ -233,7 +233,7 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
         for hand in hands:
             for VoI in get_VoI_drop():
                 df.drop(hand + '_' + VoI, axis=1, inplace=True)
-
+    
     # extract the gesture label after dealing with nans
     y = [g2idx[i] for i in df['gesture']]
     df = df.drop(columns=['gesture'])
@@ -258,7 +258,7 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
     # print(df.min(), df.max())
     # make sure that columns are in alphabetical order, so that model training and deployment accord with one another
     df = df.reindex(sorted(df.columns), axis=1)
-
+    print(df.columns)
     return df.values, np.array(y)
 
 
@@ -285,10 +285,10 @@ def mirror_data(df, hands=['left', 'right']):
 #### methods for combining the above together, to go straight from a CSVs to training examples
 
 def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True, dicts_gen=False, mirror=False):
+        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True, dicts_gen=False, mirror=False, derive_features=True):
     """all of the above: gets VoI, and using these, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
-    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=mirror)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=mirror, derive_features=derive_features)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
     synced_shuffle(X, y)
     return X, y

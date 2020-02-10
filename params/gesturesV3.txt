@@ -21,7 +21,10 @@ wave
 
 #### some additional 'well-defined' gestures
 typing
-counting
+# not using one hand to 'index' the other
+counting_hands_apart
+# using one hand to 'index' the other
+counting_hands_together
 middle_finger
 # these include shapes, lines etc.
 finger_drawing_one_hand
