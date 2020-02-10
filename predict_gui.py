@@ -136,11 +136,11 @@ while True:
                 pred = model.predict(np.expand_dims(example, axis=0))
                 print(pred)
                 print(idx2g[np.argmax(pred)])
-                if pred[0][np.argmax(pred)] > 0.6:
-                    # gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                if pred[0][np.argmax(pred)] > 0.5:
+                    gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
     # update the gui
-    # root.update_idletasks()
-    # root.update()
+    root.update_idletasks()
+    root.update()
