@@ -24,11 +24,15 @@ class GUI:
         self.bad = tk.PhotoImage(file='data/images/dead.png')
         self.label = tk.Label(master, image=self.bad)
         self.label.pack()
-        self.label2 = tk.Label(master, font=("Helvetica", 44), textvariable=self.gesture)
+        self.label2 = tk.Label(master, font=("Helvetica", 36), textvariable=self.gesture)
         self.label2.pack(side=tk.BOTTOM)
+        self.label_fury = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='fury')
+        self.label_fury.pack(side=tk.LEFT)
+        self.label_angularity = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='angularity')
+        self.label_angularity.pack(side=tk.RIGHT)
         
 root = tk.Tk()
-root.geometry("600x800")
+root.geometry("400x500")
 gui = GUI(root)
 
 
@@ -89,10 +93,10 @@ first_two_handed_frame = True
 #capture every nth frame
 n = 4
 
-### initialize variables for furiousness and angularity calculations
-raw_furiousness = 0
-furiousness = 0
-previous_furiousness = 0
+### initialize variables for fury and angularity calculations
+raw_fury = 0
+fury = 0
+previous_fury = 0
 angularity = 0
 raw_angularity = 0
 
@@ -139,24 +143,28 @@ while True:
                 print(all_predictors)
 
             
-            ### calculate furiousness and angularity
+            ### calculate fury and angularity
             # calculate raw furiosness
-            raw_furiousness = features.get_furiousness2(packed_frame, previous_complete_frame)
+            raw_fury = features.get_fury2(packed_frame, previous_complete_frame)
             # update moving average
-            furiousness = beta * furiousness + (1 - beta) * raw_furiousness
+            fury = beta * fury + (1 - beta) * raw_fury
 
             if frames_total % 5 == 0:
-                raw_angularity = features.get_angularity(raw_furiousness, previous_furiousness)
+                raw_angularity = features.get_angularity(raw_fury, previous_fury)
                 # a sudden movement will temporarily drive up raw angularity
                 # if this happens, update angularity immediately
-                if raw_angularity > 0.8:
+                if raw_angularity > 0.65:
                     angularity = raw_angularity
                 else:
                     angularity = beta * angularity + (1 - beta) * raw_angularity
-                previous_furiousness = raw_furiousness
+                previous_fury = raw_fury
 
             if frames_total % 10 == 0:
-                print(f'angularity: {angularity:.2f} furiousness: {furiousness:.2f}')
+                print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
+            
+            # update gui for anger and fury
+            gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
+            gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
 
             previous_complete_frame = packed_frame.copy()
 

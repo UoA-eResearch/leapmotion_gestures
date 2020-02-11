@@ -93,7 +93,7 @@ def interpalm_angle(new_features, features):
 def logistic_fn(x, k):
     return 1 / (1 + np.exp(-k * x))
 
-def get_furiousness1(current_frame, previous_frame):
+def get_fury1(current_frame, previous_frame):
     """calculates the speed of hand/interfinger movement, normalizes using logistic function"""
     # first, get the maximum velocity in any direction
     fur1 = max([abs(current_frame[f'{hand}_palmVelocity_{i}']) for i in (0,1,2) for hand in ('left', 'right')])
@@ -103,7 +103,7 @@ def get_furiousness1(current_frame, previous_frame):
     fur2 -= 24
     return logistic_fn(fur1, 1/600), logistic_fn(fur2, 1/24)
 
-def get_furiousness2(current_frame, previous_frame):
+def get_fury2(current_frame, previous_frame):
     """calculates the speed of hand/interfinger movement, normalizes between 0 and 1 crudely but sensibly"""
     # get the max hand velocity in any direction
     fur1 = max([abs(current_frame[f'{hand}_palmVelocity_{i}']) for i in (0,1,2) for hand in ('left', 'right')])
@@ -116,7 +116,7 @@ def get_furiousness2(current_frame, previous_frame):
 
 
 def get_angularity(current_fur, previous_fur):
-    """kind of like the acceleration of fingers and hands; indicated by sudden changes in furiousness"""
+    """kind of like the acceleration of fingers and hands; indicated by sudden changes in fury"""
     ang = abs(previous_fur - current_fur)
     return ang
 
