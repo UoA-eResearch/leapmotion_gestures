@@ -53,6 +53,11 @@ cup_hands
 # not like finger drawing. Hand position is like holding pen or brush.
 drawing
 
+
+
+
+
+############# not used #################
 #### directional gestures. Maybe a separate classifier for these? They occur all the time as parts of other gestures.
 # left
 # right

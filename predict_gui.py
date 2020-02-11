@@ -28,7 +28,7 @@ class GUI:
         self.label2.pack(side=tk.BOTTOM)
         
 root = tk.Tk()
-root.geometry("500x500")
+root.geometry("800x800")
 gui = GUI(root)
 
 
@@ -89,6 +89,10 @@ first_two_handed_frame = True
 #capture every nth frame
 n = 4
 
+furiousness = 0
+# amount of old furiousness to keep every time furiousness is calculated
+beta = 0.9
+
 while True:
     frames_total += 1
     
@@ -110,6 +114,7 @@ while True:
                 print('Warning: a hand is missing')
 
             previous_frame = packed_frame.copy()
+
             # get the derived features
             if derive_features:
                 new_features = features.get_derived_features(packed_frame)
@@ -124,7 +129,14 @@ while True:
                 else:
                     all_predictors = sorted(VoI)
                 print(all_predictors)
+
             
+            previous_complete_frame = packed_frame.copy()
+            f = features.get_furiousness(packed_frame, previous_complete_frame)
+            furiousness = beta * f + (1 - beta) * furiousness
+            if frames_total % 10 == 0:
+                print(furiousness)
+
             for i, p in enumerate(all_predictors):
                 frames[frame_index, i] = (packed_frame[p] - means_dict[p]) / stds_dict[p]
 

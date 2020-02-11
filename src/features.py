@@ -90,9 +90,18 @@ def interpalm_angle(new_features, features):
     """calculate angle between palm norms... i.e. the dot product"""
     new_features[f'palm_angle'] = np.dot(features[f'right_palm_norm'], features[f'left_palm_norm'])
 
+def get_furiousness(current_frame, previous_frame):
+    # first, get the maximum velocity in any direction
+    f = max([abs(current_frame[f'{hand}_palmVelocity_{i}']) for i in (0,1,2) for hand in ('left', 'right')])
+    # fingers something like this?
+    # f = max([current_frame[f'f{i}_f{i+1}'] - previous_frame[f'f{i}_f{i+1}'] for i in (1,2,3,4) for hand in ('left', 'right')])
+    return f
 
+def get_angularity():
+    pass
 
-
+# spike neural networks
+# echo state
     
 
 
