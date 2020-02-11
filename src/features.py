@@ -90,15 +90,38 @@ def interpalm_angle(new_features, features):
     """calculate angle between palm norms... i.e. the dot product"""
     new_features[f'palm_angle'] = np.dot(features[f'right_palm_norm'], features[f'left_palm_norm'])
 
-def get_furiousness(current_frame, previous_frame):
-    # first, get the maximum velocity in any direction
-    f = max([abs(current_frame[f'{hand}_palmVelocity_{i}']) for i in (0,1,2) for hand in ('left', 'right')])
-    # fingers something like this?
-    # f = max([current_frame[f'f{i}_f{i+1}'] - previous_frame[f'f{i}_f{i+1}'] for i in (1,2,3,4) for hand in ('left', 'right')])
-    return f
+def logistic_fn(x, k):
+    return 1 / (1 + np.exp(-k * x))
 
-def get_angularity():
-    pass
+def get_furiousness1(current_frame, previous_frame):
+    """calculates the speed of hand/interfinger movement, normalizes using logistic function"""
+    # first, get the maximum velocity in any direction
+    fur1 = max([abs(current_frame[f'{hand}_palmVelocity_{i}']) for i in (0,1,2) for hand in ('left', 'right')])
+    # fingers something like this?
+    fur2 = max([abs(current_frame[f'{hand}_f{i}_{i+1}'] - previous_frame[f'{hand}_f{i}_{i+1}']) for i in (1,2,3,4) for hand in ('left', 'right')])
+    fur1 -= 600
+    fur2 -= 24
+    return logistic_fn(fur1, 1/600), logistic_fn(fur2, 1/24)
+
+def get_furiousness2(current_frame, previous_frame):
+    """calculates the speed of hand/interfinger movement, normalizes between 0 and 1 crudely but sensibly"""
+    # get the max hand velocity in any direction
+    fur1 = max([abs(current_frame[f'{hand}_palmVelocity_{i}']) for i in (0,1,2) for hand in ('left', 'right')])
+    # get the max interfinger change since last frame
+    fur2 = max([abs(current_frame[f'{hand}_f{i}_{i+1}'] - previous_frame[f'{hand}_f{i}_{i+1}']) for i in (1,2,3,4) for hand in ('left', 'right')])
+    # scale
+    fur1 /= 1500
+    fur2 /= 60
+    return max(min(fur1, 1), min(fur2, 1))
+
+
+def get_angularity(current_fur, previous_fur):
+    """kind of like the acceleration of fingers and hands; indicated by sudden changes in furiousness"""
+    ang = abs(previous_fur - current_fur)
+    return ang
+
+
+
 
 # spike neural networks
 # echo state

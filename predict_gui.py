@@ -28,7 +28,7 @@ class GUI:
         self.label2.pack(side=tk.BOTTOM)
         
 root = tk.Tk()
-root.geometry("800x800")
+root.geometry("600x800")
 gui = GUI(root)
 
 
@@ -89,8 +89,14 @@ first_two_handed_frame = True
 #capture every nth frame
 n = 4
 
+### initialize variables for furiousness and angularity calculations
+raw_furiousness = 0
 furiousness = 0
-# amount of old furiousness to keep every time furiousness is calculated
+previous_furiousness = 0
+angularity = 0
+raw_angularity = 0
+
+# amount of old value to keep when calculating moving average
 beta = 0.9
 
 while True:
@@ -123,6 +129,8 @@ while True:
             # if this is the first two handed frame, generate a sorted list of variables used for prediction, including derived features
             if first_two_handed_frame:
                 first_two_handed_frame = False
+                # for the first frame only, set previous complete frame to the current frame
+                previous_complete_frame = packed_frame.copy()
                 if derive_features:
                     all_predictors = VoI_predictors + [pred for pred in new_features.keys()]
                     all_predictors.sort()
@@ -131,11 +139,26 @@ while True:
                 print(all_predictors)
 
             
-            previous_complete_frame = packed_frame.copy()
-            f = features.get_furiousness(packed_frame, previous_complete_frame)
-            furiousness = beta * f + (1 - beta) * furiousness
+            ### calculate furiousness and angularity
+            # calculate raw furiosness
+            raw_furiousness = features.get_furiousness2(packed_frame, previous_complete_frame)
+            # update moving average
+            furiousness = beta * furiousness + (1 - beta) * raw_furiousness
+
+            if frames_total % 5 == 0:
+                raw_angularity = features.get_angularity(raw_furiousness, previous_furiousness)
+                # a sudden movement will temporarily drive up raw angularity
+                # if this happens, update angularity immediately
+                if raw_angularity > 0.8:
+                    angularity = raw_angularity
+                else:
+                    angularity = beta * angularity + (1 - beta) * raw_angularity
+                previous_furiousness = raw_furiousness
+
             if frames_total % 10 == 0:
-                print(furiousness)
+                print(f'angularity: {angularity:.2f} furiousness: {furiousness:.2f}')
+
+            previous_complete_frame = packed_frame.copy()
 
             for i, p in enumerate(all_predictors):
                 frames[frame_index, i] = (packed_frame[p] - means_dict[p]) / stds_dict[p]
