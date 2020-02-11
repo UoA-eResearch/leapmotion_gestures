@@ -15,7 +15,7 @@ import time
 websocket_cache = {}
 
 # get gestures
-gestures, _, _ = get_gestures(version=1)
+gestures, _, _ = get_gestures(version=3)
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # note: the modes expect no_gesture to be in first place
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     try:
         while True:
             frames_total += 1
-            
+
             packed_frame = collect_frame(frames_total, n, websocket_cache)
 
             if len(packed_frame) > 0:                
@@ -135,7 +135,7 @@ if __name__ == "__main__":
                         # print(new_features['right_wrist_angle'])
                         print(packed_frame['right_grabAngle'])
                         # print(packed_frame['right_index_tipPosition_0'] - packed_frame['right_palmPosition_0'])
-                                    
+                        
 
 
                             

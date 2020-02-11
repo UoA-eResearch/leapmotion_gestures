@@ -123,63 +123,6 @@ def CSV2VoI(raw_file='data/recordings/fist_test.csv', VoI_file='params/VoI.txt',
     return df
 
 
-def X_y2examples(X,y=[],n_frames=30, stride=None):
-    """splits a contiguous list of frames and labels up into single gesture examples of length n_frames
-    
-    Arguments:
-    X -- features to be split up
-    y -- labels for each frame
-    n_frames -- int, length of each training example
-    stride -- int, determines how far to move along the sliding window that takes training examples, defaults to n_frames // 2
-
-    Returns:
-    X_final -- np array of shape (examples, frames, features)
-    y_final -- np array of shape (examples), using integers to indicate gestures. I.e. not one hot.
-
-    Note:
-    A sliding window is used to take training examples, with stride equal to half of frame size
-    Any trailing frames not long enough for a complete example will be dropped
-    
-    """
-    # # simple test case
-    # X = [[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[0,8],[1,1],[1,2],[1,3],[1,4],[1,5],[3,1],[3,2],[3,3],[3,4],[3,5],[3,6],[3,7],[4,1],[4,2]]
-    # y = [0,0,0,0,0,0,0,0,1,1,1,1,1,3,3,3,3,3,3,3,4,4]
-    
-    # if there are no y labels, then just return X split up into n_frames length examples
-    if len(y) == 0:
-        return np.array([X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)])
-    
-    if stride == None:
-        stride = n_frames // 2
-    
-    #### part 1: get the start and end indices of each gesture
-    # each sublist contains two indices, for start and end
-    Xsplit = [[0]]
-    # ysplit contains a label for each sublist in Xsplit
-    ysplit = [y[0]]
-    for i, g in enumerate(y):
-        # check if this frame is a different gestre
-        if g != ysplit[-1]:
-            # note down i - 1 as last index of previous gesture
-            Xsplit[-1].append(i-1)
-            # note down i as first index of current gesture
-            Xsplit.append([i])
-            ysplit.append(g)
-    Xsplit[-1].append(len(X)-1)
-
-    #### part 2: split up into examples, using the generated indices
-    X_final = []
-    y_final = []
-    for i, g in enumerate(ysplit):
-        # iterate over what will be the end index of each training example
-        # we add 2 to the upper bound because it is non inclusive (+1), but then neither is the stop index when slicing to get the example (+1 again)
-        for j in range(Xsplit[i][0] + n_frames, Xsplit[i][1] + 2, stride):
-            X_final.append(X[j-n_frames:j])
-            y_final.append(g)
-
-    return np.array(X_final), np.array(y_final)
-
-
 def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3}, hands=['right', 'left'],
             derive_features=True, standardize=True, dicts_gen=False, mirror=False):
     """Extracts X and y from pandas data frame, drops nan rows, and normalizes variables
@@ -258,8 +201,66 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
     # print(df.min(), df.max())
     # make sure that columns are in alphabetical order, so that model training and deployment accord with one another
     df = df.reindex(sorted(df.columns), axis=1)
-    print(df.columns)
+    
     return df.values, np.array(y)
+
+
+
+def X_y2examples(X,y=[],n_frames=30, stride=None):
+    """splits a contiguous list of frames and labels up into single gesture examples of length n_frames
+    
+    Arguments:
+    X -- features to be split up
+    y -- labels for each frame
+    n_frames -- int, length of each training example
+    stride -- int, determines how far to move along the sliding window that takes training examples, defaults to n_frames // 2
+
+    Returns:
+    X_final -- np array of shape (examples, frames, features)
+    y_final -- np array of shape (examples), using integers to indicate gestures. I.e. not one hot.
+
+    Note:
+    A sliding window is used to take training examples, with stride equal to half of frame size
+    Any trailing frames not long enough for a complete example will be dropped
+    
+    """
+    # # simple test case
+    # X = [[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[0,8],[1,1],[1,2],[1,3],[1,4],[1,5],[3,1],[3,2],[3,3],[3,4],[3,5],[3,6],[3,7],[4,1],[4,2]]
+    # y = [0,0,0,0,0,0,0,0,1,1,1,1,1,3,3,3,3,3,3,3,4,4]
+    
+    # if there are no y labels, then just return X split up into n_frames length examples
+    if len(y) == 0:
+        return np.array([X[i:i+n_frames] for i in range(0, len(X) - len(X) % n_frames, n_frames)])
+    
+    if stride == None:
+        stride = n_frames // 2
+    
+    #### part 1: get the start and end indices of each gesture
+    # each sublist contains two indices, for start and end
+    Xsplit = [[0]]
+    # ysplit contains a label for each sublist in Xsplit
+    ysplit = [y[0]]
+    for i, g in enumerate(y):
+        # check if this frame is a different gestre
+        if g != ysplit[-1]:
+            # note down i - 1 as last index of previous gesture
+            Xsplit[-1].append(i-1)
+            # note down i as first index of current gesture
+            Xsplit.append([i])
+            ysplit.append(g)
+    Xsplit[-1].append(len(X)-1)
+
+    #### part 2: split up into examples, using the generated indices
+    X_final = []
+    y_final = []
+    for i, g in enumerate(ysplit):
+        # iterate over what will be the end index of each training example
+        # we add 2 to the upper bound because it is non inclusive (+1), but then neither is the stop index when slicing to get the example (+1 again)
+        for j in range(Xsplit[i][0] + n_frames, Xsplit[i][1] + 2, stride):
+            X_final.append(X[j-n_frames:j])
+            y_final.append(g)
+
+    return np.array(X_final), np.array(y_final)
 
 
 def synced_shuffle(x, y):
@@ -284,18 +285,24 @@ def mirror_data(df, hands=['left', 'right']):
 
 #### methods for combining the above together, to go straight from a CSVs to training examples
 
-def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True, dicts_gen=False, mirror=False, derive_features=True):
+def CSV2examples(raw_file='data/recordings/test1.csv', target_fps=30,
+        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True, dicts_gen=False, mirror=True, derive_features=True):
     """all of the above: gets VoI, and using these, splits a CSV to X and y"""
     df = CSV2VoI(raw_file=raw_file, VoI_file='params/VoI.txt', target_fps=target_fps)
-    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=mirror, derive_features=derive_features)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=False, derive_features=derive_features)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
+    if mirror:
+        X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=True, derive_features=derive_features)
+        X2, y2 = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
+        X = np.concatenate([X,X2])
+        y = np.concatenate([y, y2])
     synced_shuffle(X, y)
     return X, y
 
 
-def folder2examples(folder='data/loops/', target_fps=25,
-        g2idx={'no_gesture': 0, 'so_so': 1}, n_frames=25, dicts_gen=False):
+def folder2examples(folder='data/loops/', target_fps=30,
+        g2idx={'no_gesture': 0, 'so_so': 1}, hands=['left', 'right'], n_frames=25, standardize=True,
+        dicts_gen=False, mirror=True, derive_features=True):
     '''all of the above: gets VoI, splits a folder of CSVs to X and y'''
     # create empty data frame
     df = pd.DataFrame()
@@ -303,8 +310,13 @@ def folder2examples(folder='data/loops/', target_fps=25,
     for file in os.scandir(folder):
         df2 = CSV2VoI(file, target_fps=target_fps)
         df = pd.concat([df, df2], ignore_index=True)
-    X_contiguous, y_contiguous = df2X_y(df, g2idx, dicts_gen=dicts_gen)
+    X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=False, derive_features=derive_features)
     X, y = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
+    if mirror:
+        X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=True, derive_features=derive_features)
+        X2, y2 = X_y2examples(X_contiguous, y=y_contiguous, n_frames=n_frames)
+        X = np.concatenate([X,X2])
+        y = np.concatenate([y, y2])
     synced_shuffle(X, y)
     return X, y
 

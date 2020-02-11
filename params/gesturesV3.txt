@@ -21,14 +21,11 @@ wave
 
 #### some additional 'well-defined' gestures
 typing
-# not using one hand to 'index' the other
-counting_hands_apart
 # using one hand to 'index' the other
 counting_hands_together
 middle_finger
-# these include shapes, lines etc.
-finger_drawing_one_hand
-finger_drawing_two_hands
+# finger drawing includes shapes, lines etc.
+finger_drawing
 
 #### shapes, sizes
 small
@@ -74,6 +71,7 @@ drawing
 # drop
 # cover
 # pause, maybe 'stop' already covers this?
+# counting_hands_apart, not included for now
 
 ######## discarded ########
 

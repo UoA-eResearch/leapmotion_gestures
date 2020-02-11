@@ -33,9 +33,9 @@ gui = GUI(root)
 
 
 # load the prediction model
-model = tf.keras.models.load_model('models/V1/40f_5hs_RH.h5')
+model = tf.keras.models.load_model('models/V3/40f_5hs.h5')
 # mapping of gestures to integers: need this for decoding model output
-gestures, g2idx, idx2g = get_gestures(version=1)
+gestures, g2idx, idx2g = get_gestures(version=3)
 # set whether or not to derive features and drop unused VoI
 derive_features = True
 
@@ -137,7 +137,7 @@ while True:
                 print(pred)
                 print(idx2g[np.argmax(pred)])
                 if pred[0][np.argmax(pred)] > 0.5:
-                    gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                    # gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
