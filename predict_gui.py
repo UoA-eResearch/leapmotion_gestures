@@ -5,34 +5,21 @@ import config
 import json
 import pandas as pd
 import numpy as np
-from src.dataMethods import *
-from src.leapMethods import collect_frame
+from src.data_methods import *
+from src.leap_methods import collect_frame
+from src.classes import *
 import random
 import time
 import tkinter as tk
+import matplotlib.pyplot as plt 
 import tensorflow as tf
 
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
 
-class GUI:
-    def __init__(self, master):
-        self.master = master
-        master.title("GUI")
-        self.gesture = tk.StringVar()
-        self.gesture.set('position hand')
-        self.img = tk.PhotoImage(file='data/images/dead.png')
-        self.bad = tk.PhotoImage(file='data/images/dead.png')
-        self.label = tk.Label(master, image=self.bad)
-        self.label.pack()
-        self.label2 = tk.Label(master, font=("Helvetica", 36), textvariable=self.gesture)
-        self.label2.pack(side=tk.BOTTOM)
-        self.label_fury = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='fury')
-        self.label_fury.pack(side=tk.LEFT)
-        self.label_angularity = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='angularity')
-        self.label_angularity.pack(side=tk.RIGHT)
+
         
 root = tk.Tk()
-root.geometry("400x500")
+root.geometry("600x500")
 gui = GUI(root)
 
 
@@ -103,6 +90,16 @@ raw_angularity = 0
 # amount of old value to keep when calculating moving average
 beta = 0.9
 
+# set up storage for fury and angularity history
+angularity_cb = CircularBuffer((30,))
+fury_cb = CircularBuffer((30,))
+
+# set up plotting
+plt.ion()
+line1, = plt.plot(fury_cb.get())
+plt.ylim(0,1)
+
+
 while True:
     frames_total += 1
     
@@ -120,11 +117,12 @@ while True:
         else:
             # if a hand is missing, fill in the data from the previous frame
             if len(packed_frame) < 400:
-                packed_frame.update(previous_frame)
-                print('Warning: a hand is missing')
-
-            previous_frame = packed_frame.copy()
-
+                previous_frame.update(packed_frame)
+                packed_frame = previous_frame.copy()
+                if frames_total % 5 == 0:
+                    print('Warning: a hand is missing')
+            else:
+                previous_frame = packed_frame.copy()
             # get the derived features
             if derive_features:
                 new_features = features.get_derived_features(packed_frame)
@@ -153,18 +151,22 @@ while True:
                 raw_angularity = features.get_angularity(raw_fury, previous_fury)
                 # a sudden movement will temporarily drive up raw angularity
                 # if this happens, update angularity immediately
-                if raw_angularity > 0.65:
+                if raw_angularity > 0.72:
                     angularity = raw_angularity
                 else:
                     angularity = beta * angularity + (1 - beta) * raw_angularity
                 previous_fury = raw_fury
-
-            if frames_total % 10 == 0:
-                print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
+            fury_cb.add(fury)
+            # if frames_total % 10 == 0:
+                # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
+                # print(packed_frame['right_palmPosition_0'])
             
             # update gui for anger and fury
             gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
             gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
+            
+            if frames_total % 5 == 0:
+                line1.set_ydata(fury_cb.get())
 
             previous_complete_frame = packed_frame.copy()
 

@@ -5,8 +5,8 @@ import config
 import json
 import pandas as pd
 import numpy as np
-from src.dataMethods import get_gestures
-from src.leapMethods import collect_frame
+from src.data_methods import get_gestures
+from src.leap_methods import collect_frame
 import src.features as features
 import random
 import time
