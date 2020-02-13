@@ -20,10 +20,10 @@ class GUI:
         self.label2 = tk.Label(master, font=("Helvetica", 36), textvariable=self.gesture)
         self.label2.pack(side=tk.BOTTOM)
         # label with text coloured according to level of fury
-        self.label_fury = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='fury')
+        self.label_fury = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='   movement')
         self.label_fury.pack(side=tk.LEFT)
         # label with text coloured according to level of angularity
-        self.label_angularity = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='angularity')
+        self.label_angularity = tk.Label(master, foreground="#%02x%02x%02x" % (0,50,0,), font=("Helvetica", 30), text='angularity   ')
         self.label_angularity.pack(side=tk.RIGHT)
 
 

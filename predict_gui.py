@@ -45,11 +45,6 @@ else:
     VoI = [hand + '_' + v for v in VoI for hand in hands]
 
 
-# IMPORTANT: always have variables in alphabetical order
-# the model expects to receive them that way
-# VoI.sort()
-# v2idx = {v: i for i, v in enumerate(VoI)}
-
 # get mean and standard deviation dictionaries
 # these are used for standardizing input to model
 with open('params/means_dict.json', 'r') as f:
@@ -62,7 +57,7 @@ with open('params/stds_dict.json', 'r') as f:
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
 # for now, just set to same frequency as keep
-pred_interval = keep
+pred_interval = 15
 
 # initialize frame storage
 frames = np.empty((keep,model.input.shape[-1]))
@@ -80,23 +75,34 @@ first_two_handed_frame = True
 #capture every nth frame
 n = 4
 
-### initialize variables for fury and angularity calculations
+### initialize variables for fury, angularity, and pred confidence calculations
 raw_fury = 0
 fury = 0
 previous_fury = 0
 angularity = 0
 raw_angularity = 0
+pred_confidence = 0
+raw_pred_confidence = 0
 
 # amount of old value to keep when calculating moving average
-beta = 0.9
+beta_fury = 0.9
+beta_angularity = 0.9
+beta_confidence = 0.8
 
 # set up storage for fury and angularity history
 angularity_cb = CircularBuffer((30,))
 fury_cb = CircularBuffer((30,))
+# also need history of prediction confidence...
+confidence_cb = CircularBuffer((30,))
 
 # set up plotting
 plt.ion()
-line1, = plt.plot(fury_cb.get())
+fig, ax = plt.subplots(figsize=(6,6))
+text = ax.text(29,0.5,' ', bbox={'facecolor': 'red', 'alpha': 0.3, 'pad': 5})
+line_fury, = plt.plot(fury_cb.get())
+line_angularity, = plt.plot(angularity_cb.get())
+line_pred, = plt.plot(confidence_cb.get())
+plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
 plt.ylim(0,1)
 
 
@@ -145,7 +151,7 @@ while True:
             # calculate raw furiosness
             raw_fury = features.get_fury2(packed_frame, previous_complete_frame)
             # update moving average
-            fury = beta * fury + (1 - beta) * raw_fury
+            fury = beta_fury * fury + (1 - beta_fury) * raw_fury
 
             if frames_total % 5 == 0:
                 raw_angularity = features.get_angularity(raw_fury, previous_fury)
@@ -154,9 +160,18 @@ while True:
                 if raw_angularity > 0.72:
                     angularity = raw_angularity
                 else:
-                    angularity = beta * angularity + (1 - beta) * raw_angularity
+                    angularity = beta_angularity * angularity + (1 - beta_angularity) * raw_angularity
                 previous_fury = raw_fury
-            fury_cb.add(fury)
+                fury_cb.add(fury)
+                angularity_cb.add(angularity)
+                pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * raw_pred_confidence
+                confidence_cb.add(pred_confidence)
+                line_angularity.set_ydata(fury_cb.get())
+                line_fury.set_ydata(angularity_cb.get())
+                line_pred.set_ydata(confidence_cb.get())
+                text.set_text(gui.gesture.get())
+                text.set_position((27, pred_confidence))
+
             # if frames_total % 10 == 0:
                 # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
                 # print(packed_frame['right_palmPosition_0'])
@@ -164,9 +179,6 @@ while True:
             # update gui for anger and fury
             gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
             gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
-            
-            if frames_total % 5 == 0:
-                line1.set_ydata(fury_cb.get())
 
             previous_complete_frame = packed_frame.copy()
 
@@ -179,10 +191,12 @@ while True:
                 example = np.concatenate((frames[frame_index+1:,:], frames[:frame_index+1,:]))
                 # feed example into model, and get a prediction
                 pred = model.predict(np.expand_dims(example, axis=0))
-                print(pred)
+                # confidence of prediction is used for plotting. Rescale so 0.3 is zero.
+                raw_pred_confidence = max((np.max(pred) - 0.3) / 0.7, 0)
+                print(raw_pred_confidence)
                 print(idx2g[np.argmax(pred)])
                 if pred[0][np.argmax(pred)] > 0.5:
-                    # gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                    gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
