@@ -13,6 +13,7 @@ import time
 import tkinter as tk
 import matplotlib.pyplot as plt 
 import tensorflow as tf
+from itertools import cycle
 
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
 
@@ -96,14 +97,20 @@ fury_cb = CircularBuffer((30,))
 confidence_cb = CircularBuffer((30,))
 
 # set up plotting
+colour = cycle('bgrcmk')
 plt.ion()
-fig, ax = plt.subplots(figsize=(6,6))
-text = ax.text(29,0.5,' ', bbox={'facecolor': 'red', 'alpha': 0.3, 'pad': 5})
+fig, ax = plt.subplots(figsize=(8,8))
+current_label = ax.text(29,0.5,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+old_labels = []
 line_fury, = plt.plot(fury_cb.get())
 line_angularity, = plt.plot(angularity_cb.get())
 line_pred, = plt.plot(confidence_cb.get())
 plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
 plt.ylim(0,1)
+
+gesture = 'no_gesture'
+gesture_change = False
+
 
 
 while True:
@@ -152,7 +159,6 @@ while True:
             raw_fury = features.get_fury2(packed_frame, previous_complete_frame)
             # update moving average
             fury = beta_fury * fury + (1 - beta_fury) * raw_fury
-
             if frames_total % 5 == 0:
                 raw_angularity = features.get_angularity(raw_fury, previous_fury)
                 # a sudden movement will temporarily drive up raw angularity
@@ -166,11 +172,22 @@ while True:
                 angularity_cb.add(angularity)
                 pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * raw_pred_confidence
                 confidence_cb.add(pred_confidence)
+            
                 line_angularity.set_ydata(fury_cb.get())
                 line_fury.set_ydata(angularity_cb.get())
                 line_pred.set_ydata(confidence_cb.get())
-                text.set_text(gui.gesture.get())
-                text.set_position((27, pred_confidence))
+                if gesture_change == True:
+                    old_labels.append(current_label)
+                    current_label = ax.text(29,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+                    gesture_change = False
+                current_label.set_position((28, pred_confidence))
+                for old_label in old_labels:
+                    pos = old_label.get_position()
+                    # if pos[0] == 0:
+                    #     old_label.remove()
+                    old_label.set_position((pos[0] - 1, pos[1]))
+                old_labels = [l for l in old_labels if l.get_position()[0] > 0]
+
 
             # if frames_total % 10 == 0:
                 # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
@@ -192,14 +209,20 @@ while True:
                 # feed example into model, and get a prediction
                 pred = model.predict(np.expand_dims(example, axis=0))
                 # confidence of prediction is used for plotting. Rescale so 0.3 is zero.
-                raw_pred_confidence = max((np.max(pred) - 0.3) / 0.7, 0)
+                # sometimes getting nan at the start. Need to find source of this.
+                if not np.isnan(pred[0][0]):
+                    raw_pred_confidence = max((np.max(pred) - 0.3) / 0.7, 0)
                 print(raw_pred_confidence)
                 print(idx2g[np.argmax(pred)])
+                if idx2g[np.argmax(pred)] != gesture:
+                    gesture_change = True
+                    gesture = idx2g[np.argmax(pred)]
+                gesture = idx2g[np.argmax(pred)]
                 if pred[0][np.argmax(pred)] > 0.5:
                     gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
-    # update the gui
+    # # update the gui
     root.update_idletasks()
     root.update()
