@@ -10,18 +10,19 @@ from src.leap_methods import collect_frame
 from src.classes import *
 import random
 import time
-import tkinter as tk
 import matplotlib.pyplot as plt 
+import tkinter as tk
 import tensorflow as tf
 from itertools import cycle
 
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
 
 
-        
+tk_gui = True
 root = tk.Tk()
-root.geometry("600x500")
-gui = GUI(root)
+if tk_gui:
+    root.geometry("600x500")
+    gui = GUI(root)
 
 
 # load the prediction model
@@ -58,7 +59,7 @@ with open('params/stds_dict.json', 'r') as f:
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
 # for now, just set to same frequency as keep
-pred_interval = 15
+pred_interval = 20
 
 # initialize frame storage
 frames = np.empty((keep,model.input.shape[-1]))
@@ -98,15 +99,15 @@ confidence_cb = CircularBuffer((30,))
 
 # set up plotting
 colour = cycle('bgrcmk')
-plt.ion()
 fig, ax = plt.subplots(figsize=(8,8))
-current_label = ax.text(29,0.5,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+current_label = plt.text(29,0.1,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
 old_labels = []
 line_fury, = plt.plot(fury_cb.get())
 line_angularity, = plt.plot(angularity_cb.get())
 line_pred, = plt.plot(confidence_cb.get())
 plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
 plt.ylim(0,1)
+plt.show(block=False)
 
 gesture = 'no_gesture'
 gesture_change = False
@@ -124,8 +125,9 @@ while True:
         # length of packed frame is ~350 if one hand present, ~700 for two
         if len(packed_frame) < 400 and previous_frame == None:
             print('need two hands to start')
-            gui.label.configure(image=gui.bad)
-            gui.gesture.set('position hands')
+            if tk_gui:
+                gui.label.configure(image=gui.bad)
+                gui.gesture.set('position hands')
         # if we have at least one hand, and a previous frame to supplement any missing hand data, then we can proceed
         else:
             # if a hand is missing, fill in the data from the previous frame
@@ -178,24 +180,28 @@ while True:
                 line_pred.set_ydata(confidence_cb.get())
                 if gesture_change == True:
                     old_labels.append(current_label)
-                    current_label = ax.text(29,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+                    current_label = plt.text(29,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
                     gesture_change = False
                 current_label.set_position((28, pred_confidence))
                 for old_label in old_labels:
                     pos = old_label.get_position()
-                    # if pos[0] == 0:
-                    #     old_label.remove()
+                    if pos[0] == 0:
+                        old_label.remove()
                     old_label.set_position((pos[0] - 1, pos[1]))
-                old_labels = [l for l in old_labels if l.get_position()[0] > 0]
-
+                old_labels = [l for l in old_labels if l.get_position()[0] >= 0]
+            if frames_total % 5 == 0:
+                root.update_idletasks()
+                root.update()
+                plt.draw()
 
             # if frames_total % 10 == 0:
                 # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
                 # print(packed_frame['right_palmPosition_0'])
             
             # update gui for anger and fury
-            gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
-            gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
+            if tk_gui:
+                gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
+                gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
 
             previous_complete_frame = packed_frame.copy()
 
@@ -217,12 +223,12 @@ while True:
                 if idx2g[np.argmax(pred)] != gesture:
                     gesture_change = True
                     gesture = idx2g[np.argmax(pred)]
-                gesture = idx2g[np.argmax(pred)]
-                if pred[0][np.argmax(pred)] > 0.5:
+                if pred[0][np.argmax(pred)] > 0.5 and tk_gui:
                     gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
-    # # update the gui
-    root.update_idletasks()
-    root.update()
+    # update the gui
+    if tk_gui and frames_total:
+        root.update_idletasks()
+        root.update()
