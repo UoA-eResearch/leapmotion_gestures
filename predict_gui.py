@@ -17,8 +17,12 @@ from itertools import cycle
 
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
 
+# If matplotlib updates too often, then things really lag. Every 10 frames captured is working right now, which at ~25fps for data capture works out to ~2.5fps for graphing.
+# The model predicting too often can also cause things to lag a bit. Predicting every 20 frames is safe at present, but could change, depending on the size of the model used.
+
 
 tk_gui = True
+blit = True
 root = tk.Tk()
 if tk_gui:
     root.geometry("600x500")
@@ -100,14 +104,20 @@ confidence_cb = CircularBuffer((30,))
 # set up plotting
 colour = cycle('bgrcmk')
 fig, ax = plt.subplots(figsize=(8,8))
+plt.ylim(0,1)
+plt.xlim(0,30)
+
+plt.show(block=False)
+
+if blit == True:
+    axbackground = fig.canvas.copy_from_bbox(ax.bbox)
+
 current_label = plt.text(29,0.1,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
 old_labels = []
-line_fury, = plt.plot(fury_cb.get())
-line_angularity, = plt.plot(angularity_cb.get())
-line_pred, = plt.plot(confidence_cb.get())
+line_fury, = ax.plot(fury_cb.get())
+line_angularity, = ax.plot(angularity_cb.get())
+line_pred, = ax.plot(confidence_cb.get())
 plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
-plt.ylim(0,1)
-plt.show(block=False)
 
 gesture = 'no_gesture'
 gesture_change = False
@@ -161,7 +171,7 @@ while True:
             raw_fury = features.get_fury2(packed_frame, previous_complete_frame)
             # update moving average
             fury = beta_fury * fury + (1 - beta_fury) * raw_fury
-            if frames_total % 5 == 0:
+            if frames_total % 3 == 0:
                 raw_angularity = features.get_angularity(raw_fury, previous_fury)
                 # a sudden movement will temporarily drive up raw angularity
                 # if this happens, update angularity immediately
@@ -189,10 +199,21 @@ while True:
                         old_label.remove()
                     old_label.set_position((pos[0] - 1, pos[1]))
                 old_labels = [l for l in old_labels if l.get_position()[0] >= 0]
-            if frames_total % 10 == 0:
-                plt.draw()
-                root.update_idletasks()
-                root.update()
+            if frames_total % 3 == 0:
+                if blit == True:
+                    # fig.canvas.restore_region(axbackground)
+                    ax.draw_artist(ax.patch)
+                    ax.draw_artist(line_angularity)
+                    ax.draw_artist(line_fury)
+                    ax.draw_artist(line_pred)
+                    ax.draw_artist(current_label)
+                    for label in old_labels:
+                        ax.draw_artist(label)
+                    fig.canvas.blit(ax.bbox)
+                else:
+                    plt.draw()
+                fig.canvas.flush_events()
+
 
             # if frames_total % 10 == 0:
                 # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
@@ -229,4 +250,5 @@ while True:
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
     # update the gui
-    
+        root.update_idletasks()
+        root.update()
