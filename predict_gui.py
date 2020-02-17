@@ -10,8 +10,8 @@ from src.leap_methods import collect_frame
 from src.classes import *
 import random
 import time
-import matplotlib.pyplot as plt 
 import tkinter as tk
+import matplotlib.pyplot as plt 
 import tensorflow as tf
 from itertools import cycle
 
@@ -189,10 +189,10 @@ while True:
                         old_label.remove()
                     old_label.set_position((pos[0] - 1, pos[1]))
                 old_labels = [l for l in old_labels if l.get_position()[0] >= 0]
-            if frames_total % 5 == 0:
+            if frames_total % 10 == 0:
+                plt.draw()
                 root.update_idletasks()
                 root.update()
-                plt.draw()
 
             # if frames_total % 10 == 0:
                 # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
@@ -229,6 +229,4 @@ while True:
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
     # update the gui
-    if tk_gui and frames_total:
-        root.update_idletasks()
-        root.update()
+    
