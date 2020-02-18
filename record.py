@@ -10,12 +10,17 @@ from src.leap_methods import collect_frame
 import src.features as features
 import random
 import time
+import argparse
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--version", type=int, help="select which gesture file version to use", default=3)
+args = parser.parse_args()
 
 websocket_cache = {}
 
 # get gestures
-gestures, _, _ = get_gestures(version=3)
+gestures, _, _ = get_gestures(version=args.version)
 
 FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
 # note: the modes expect no_gesture to be in first place

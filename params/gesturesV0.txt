@@ -5,14 +5,10 @@
 # version zero used for testing a subset of gestures
 
 #### shapes, sizes
-no_gesture
-small
-this_big
-# drawn shapes
-round_drawn
-square_drawn
-triangle_drawn
-# set position
-love_heart_set
-round_set
-triangle_set
+middle_finger
+wave
+peace
+stop
+so_so
+pointing
+thumbs_down

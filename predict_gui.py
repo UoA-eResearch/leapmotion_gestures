@@ -17,7 +17,11 @@ from itertools import cycle
 
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
 
-# If matplotlib updates too often, then things really lag. Every 10 frames captured is working right now, which at ~25fps for data capture works out to ~2.5fps for graphing.
+# useful tutorials on blitting:
+# https://stackoverflow.com/questions/40126176/fast-live-plotting-in-matplotlib-pyplot
+# https://bastibe.de/2013-05-30-speeding-up-matplotlib.html
+
+# Without blitting, matplotlib lags badly.
 # The model predicting too often can also cause things to lag a bit. Predicting every 20 frames is safe at present, but could change, depending on the size of the model used.
 
 
@@ -30,7 +34,7 @@ if tk_gui:
 
 
 # load the prediction model
-model = tf.keras.models.load_model('models/V3/40f_5hs.h5')
+model = tf.keras.models.load_model('models/V3/40f_4hs_bi.h5')
 # mapping of gestures to integers: need this for decoding model output
 gestures, g2idx, idx2g = get_gestures(version=3)
 # set whether or not to derive features and drop unused VoI
@@ -92,8 +96,8 @@ raw_pred_confidence = 0
 
 # amount of old value to keep when calculating moving average
 beta_fury = 0.9
-beta_angularity = 0.9
-beta_confidence = 0.8
+beta_angularity = 0.98
+beta_confidence = 0.9
 
 # set up storage for fury and angularity history
 angularity_cb = CircularBuffer((30,))
@@ -103,7 +107,7 @@ confidence_cb = CircularBuffer((30,))
 
 # set up plotting
 colour = cycle('bgrcmk')
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(12,8))
 plt.ylim(0,1)
 plt.xlim(0,30)
 
@@ -112,7 +116,7 @@ plt.show(block=False)
 if blit == True:
     axbackground = fig.canvas.copy_from_bbox(ax.bbox)
 
-current_label = plt.text(29,0.1,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+current_label = plt.text(28,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
 old_labels = []
 line_fury, = ax.plot(fury_cb.get())
 line_angularity, = ax.plot(angularity_cb.get())
@@ -167,41 +171,52 @@ while True:
 
             
             ### calculate fury and angularity
-            # calculate raw furiosness
+            # calculate raw furiosness, looking at how fast hands are moving
             raw_fury = features.get_fury2(packed_frame, previous_complete_frame)
             # update moving average
             fury = beta_fury * fury + (1 - beta_fury) * raw_fury
-            if frames_total % 3 == 0:
-                raw_angularity = features.get_angularity(raw_fury, previous_fury)
-                # a sudden movement will temporarily drive up raw angularity
-                # if this happens, update angularity immediately
-                if raw_angularity > 0.72:
-                    angularity = raw_angularity
-                else:
-                    angularity = beta_angularity * angularity + (1 - beta_angularity) * raw_angularity
+            # calculate raw angularity, looking at how movement levels have changed
+            raw_angularity = features.get_angularity(raw_fury, previous_fury)
+            # a sudden movement will temporarily drive up raw angularity
+            # if this happens, update angularity immediately
+            if raw_angularity > 0.72:
+                angularity = raw_angularity
+            # otherwise, update moving average
+            else:
+                angularity = beta_angularity * angularity + (1 - beta_angularity) * raw_angularity
+            # how often to update the previous value of fury will change the sensitivity of angularity
+            if frames_total % 10 == 0:
                 previous_fury = raw_fury
+            # update prediction confidence moving average
+            pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * raw_pred_confidence
+
+            ### Update circular buffers and plot
+            # doing this every 3 frames seems reasonable right now
+            if frames_total % 3 == 0:
+                # buffers
                 fury_cb.add(fury)
                 angularity_cb.add(angularity)
-                pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * raw_pred_confidence
                 confidence_cb.add(pred_confidence)
-            
+
+                # lines
                 line_angularity.set_ydata(fury_cb.get())
                 line_fury.set_ydata(angularity_cb.get())
                 line_pred.set_ydata(confidence_cb.get())
+                
+                # create new gesture label if needed
                 if gesture_change == True:
                     old_labels.append(current_label)
-                    current_label = plt.text(29,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+                    current_label = plt.text(28,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
                     gesture_change = False
-                current_label.set_position((28, pred_confidence))
+                else:
+                    current_label.set_position((28, pred_confidence))
                 for old_label in old_labels:
                     pos = old_label.get_position()
                     if pos[0] == 0:
                         old_label.remove()
                     old_label.set_position((pos[0] - 1, pos[1]))
                 old_labels = [l for l in old_labels if l.get_position()[0] >= 0]
-            if frames_total % 3 == 0:
                 if blit == True:
-                    # fig.canvas.restore_region(axbackground)
                     ax.draw_artist(ax.patch)
                     ax.draw_artist(line_angularity)
                     ax.draw_artist(line_fury)
