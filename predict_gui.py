@@ -41,7 +41,7 @@ gestures, g2idx, idx2g = get_gestures(version=3)
 derive_features = True
 
 websocket_cache = {}
-FINGERS = ["thumb", "index", "middle", "ring", "pinky"]
+
 # which hands will be used in predicting?
 hands = ['left', 'right']
 # Get the VoI that are used as predictors
@@ -69,8 +69,10 @@ keep = model.input.shape[-2]
 # for now, just set to same frequency as keep
 pred_interval = 20
 
-# initialize frame storage
-frames = np.empty((keep,model.input.shape[-1]))
+
+# set up circular buffer for storing model input data
+model_input_data = CircularBuffer((model.input.shape[-2],model.input.shape[-1]))
+
 # keep track of total no. of frames received
 frames_total = 0
 # no. captured continuously
@@ -92,35 +94,45 @@ previous_fury = 0
 angularity = 0
 raw_angularity = 0
 pred_confidence = 0
-raw_pred_confidence = 0
+adjusted_raw_pred_confidence = 0
 
-# amount of old value to keep when calculating moving average
+# amount of old value to keep when calculating moving averages
 beta_fury = 0.9
-beta_angularity = 0.98
-beta_confidence = 0.9
+beta_angularity = 0.975
+beta_confidence = 0.98
+
+# the prediction confidence is normally high. Rescale between confidence_zero and 1.
+confidence_zero = 0.5
 
 # set up storage for fury and angularity history
 angularity_cb = CircularBuffer((30,))
 fury_cb = CircularBuffer((30,))
-# also need history of prediction confidence...
+# also need history of prediction confidence
 confidence_cb = CircularBuffer((30,))
 
 # set up plotting
 colour = cycle('bgrcmk')
 fig, ax = plt.subplots(figsize=(12,8))
-plt.ylim(0,1)
-plt.xlim(0,30)
+plt.ylim(-0.05,1.05)
+plt.xlim(-1,31)
 
 plt.show(block=False)
 
 if blit == True:
     axbackground = fig.canvas.copy_from_bbox(ax.bbox)
 
-current_label = plt.text(28,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+current_label = plt.text(27,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+# old labels that drift across the screen
 old_labels = []
-line_fury, = ax.plot(fury_cb.get())
-line_angularity, = ax.plot(angularity_cb.get())
-line_pred, = ax.plot(confidence_cb.get())
+# old labels that are now stationary
+stationary_labels = []
+# final x position that old labels drift to
+final_label_x_position = -4
+linewidths=2
+line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
+line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
+line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
+# currently the legend is drawn over as soon as the plot is updated
 plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
 
 gesture = 'no_gesture'
@@ -129,6 +141,10 @@ gesture_change = False
 
 
 while True:
+    # update the gui
+    root.update_idletasks()
+    root.update()
+
     frames_total += 1
     
     packed_frame = collect_frame(frames_total, n, websocket_cache)
@@ -188,7 +204,7 @@ while True:
             if frames_total % 10 == 0:
                 previous_fury = raw_fury
             # update prediction confidence moving average
-            pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * raw_pred_confidence
+            pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * adjusted_raw_pred_confidence
 
             ### Update circular buffers and plot
             # doing this every 3 frames seems reasonable right now
@@ -199,23 +215,28 @@ while True:
                 confidence_cb.add(pred_confidence)
 
                 # lines
-                line_angularity.set_ydata(fury_cb.get())
-                line_fury.set_ydata(angularity_cb.get())
+                line_angularity.set_ydata(angularity_cb.get())
+                line_fury.set_ydata(fury_cb.get())
                 line_pred.set_ydata(confidence_cb.get())
                 
                 # create new gesture label if needed
                 if gesture_change == True:
                     old_labels.append(current_label)
-                    current_label = plt.text(28,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+                    current_label = plt.text(27,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
                     gesture_change = False
                 else:
-                    current_label.set_position((28, pred_confidence))
-                for old_label in old_labels:
-                    pos = old_label.get_position()
-                    if pos[0] == 0:
-                        old_label.remove()
-                    old_label.set_position((pos[0] - 1, pos[1]))
-                old_labels = [l for l in old_labels if l.get_position()[0] >= 0]
+                    current_label.set_position((27, pred_confidence))
+                for old_l in old_labels:
+                    pos = old_l.get_position()
+                    if pos[0] <= final_label_x_position:
+                        stationary_labels.append(old_l)
+                    else:
+                        old_l.set_position((pos[0] - 1, pos[1]))
+                old_labels = [l for l in old_labels if l.get_position()[0] > final_label_x_position]
+                for stationary_l in stationary_labels:
+                    # could do something more than just removing stationary labels
+                    # e.g. could keep them at edge of screen, and fade them out
+                    stationary_l.remove()
                 if blit == True:
                     ax.draw_artist(ax.patch)
                     ax.draw_artist(line_angularity)
@@ -241,20 +262,21 @@ while True:
 
             previous_complete_frame = packed_frame.copy()
 
+            frame = np.empty(model.input.shape[-1])
             for i, p in enumerate(all_predictors):
-                frames[frame_index, i] = (packed_frame[p] - means_dict[p]) / stds_dict[p]
+                frame[i] = (packed_frame[p] - means_dict[p]) / stds_dict[p]
+            model_input_data.add(frame)
 
             # make a prediction every pred_interval number of frames
             # but first ensure there is a complete training example's worth of consecutive frames
             if frames_recorded >= keep and frames_recorded % pred_interval == 0:
-                example = np.concatenate((frames[frame_index+1:,:], frames[:frame_index+1,:]))
                 # feed example into model, and get a prediction
-                pred = model.predict(np.expand_dims(example, axis=0))
-                # confidence of prediction is used for plotting. Rescale so 0.3 is zero.
+                pred = model.predict(np.expand_dims(model_input_data.get(), axis=0))
                 # sometimes getting nan at the start. Need to find source of this.
                 if not np.isnan(pred[0][0]):
-                    raw_pred_confidence = max((np.max(pred) - 0.3) / 0.7, 0)
-                print(raw_pred_confidence)
+                    # confidence of prediction is used for plotting. Often very high. Rescale.
+                    adjusted_raw_pred_confidence = max((np.max(pred)-confidence_zero) / (1-confidence_zero), 0)
+                print(adjusted_raw_pred_confidence)
                 print(idx2g[np.argmax(pred)])
                 if idx2g[np.argmax(pred)] != gesture:
                     gesture_change = True
@@ -264,6 +286,4 @@ while True:
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
-    # update the gui
-        root.update_idletasks()
-        root.update()
+    

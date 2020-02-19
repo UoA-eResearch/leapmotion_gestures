@@ -61,7 +61,7 @@ def many2one_model(n_gestures=2, n_frames=35, n_features=21, rnn_units=4, bidire
             else:
                 x = layers.LSTM(rnn_units, return_sequences=True, stateful=False, recurrent_dropout=recurrent_dropout)(x)
     
-    for i in range(n_dense_layers):
+    for i in range(n_dense_layers - 1):
         x = layers.Dense(dense_size, activation='relu')(x)
 
     

@@ -4,11 +4,20 @@
 
 # version zero used for testing a subset of gestures
 
-#### shapes, sizes
-middle_finger
-wave
-peace
-stop
-so_so
-pointing
-thumbs_down
+
+
+
+
+
+
+
+
+
+#supplemental1
+#middle_finger
+#wave
+#peace
+#stop
+#so_so
+#pointing
+#thumbs_down

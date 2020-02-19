@@ -28,14 +28,10 @@ palmNormal_0
 palmNormal_1
 palmNormal_2
 
-
-
 # direction the hand is pointing in
 direction_0
 direction_1
 direction_2
-
-
 
 ### these are needed for calculating wrist flexion angle
 # location of the wrist
@@ -47,7 +43,6 @@ wrist_2
 elbow_0
 elbow_1
 elbow_2
-
 
 # position of palm
 palmPosition_0
