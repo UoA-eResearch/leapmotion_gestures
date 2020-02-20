@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 
-def get_derived_features(frame, hands=['left', 'right']):
+def get_derived_features(frame, derived_feature_dict, hands=['left', 'right']):
     """given a frame of gesture data, returns some derived features"""
     # get fingertip positions
     fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-
     # create dictionary of the features needed for deriving new features
     features = {}
     for hand in hands:
@@ -15,25 +14,19 @@ def get_derived_features(frame, hands=['left', 'right']):
         features[f'{hand}_palm_norm'] = np.array([frame[f'{hand}_palmNormal_{i}'] for i in (0,1,2)])
         features[f'{hand}_palm_position'] = np.array([frame[f'{hand}_palmPosition_{i}'] for i in (0,1,2)])
         features[f'{hand}_wrist'] = np.array([frame[f'{hand}_wrist_{i}'] for i in (0,1,2)])
-        # features[f'{hand}_elbow'] = np.array([frame[f'{hand}_elbow_{i}'] for i in (0,1,2)])
-        # features[f'{hand}_palm_velocity'] = np.array([frame[f'{hand}_palmVelocity_{i}'] for i in (0,1,2)])
+        features[f'{hand}_elbow'] = np.array([frame[f'{hand}_elbow_{i}'] for i in (0,1,2)])
+        features[f'{hand}_palm_velocity'] = np.array([frame[f'{hand}_palmVelocity_{i}'] for i in (0,1,2)])
 
     # create dictionary of new features
     new_features = {}
-    for hand in hands:
-        # compute within hand features
-        adjacent_finger_distances(new_features, features, hand)
-        finger_palm_distances(new_features, features, hand)
-        finger_palm_plain_distances(new_features, features, hand)
-        # wrist_angle(new_features, features, hand)
-        # palm_velocity(new_features, features, hand)
-        
-    
+    for f in derived_feature_dict['one_handed']:
+        for hand in hands:
+            globals()[f](new_features, features, hand)
+
     if len(hands) == 2:
         # compute between hand features
-        interpalm_distance(new_features, features)
-        interfinger_distances(new_features, features)
-        # interpalm_angle(new_features, features)
+        for f in derived_feature_dict['two_handed']:
+            globals()[f](new_features, features)
 
     return new_features
 
@@ -52,7 +45,6 @@ def adjacent_finger_distances(new_features, features, hand):
     """
     for i in range(1, 5):
         new_features[f'{hand}_f{i}_{i+1}'] = np.linalg.norm(features[f'{hand}_f{i}'] - features[f'{hand}_f{i+1}'])
-
 
 def finger_palm_distances(new_features, features, hand):
     """Calculates distance to the center of the palm for each finger"""
@@ -113,7 +105,6 @@ def get_fury2(current_frame, previous_frame):
     fur1 /= 1500
     fur2 /= 60
     return max(min(fur1, 1), min(fur2, 1))
-
 
 def get_angularity(current_fur, previous_fur):
     """kind of like the acceleration of fingers and hands; indicated by sudden changes in fury"""

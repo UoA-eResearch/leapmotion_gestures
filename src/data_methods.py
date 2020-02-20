@@ -12,14 +12,18 @@ import os
 
 #### methods for reading in or creating parameter files in params/
 
+def read_ignoring_comments(filepath):
+    """read in a file and return a list of lines not starting with '#'"""
+    with open(filepath) as f:
+        contents = f.read()
+    contents = contents.split('\n')
+    # filter out any blank lines or lines that are comments
+    contents = [c for c in contents if c != '' and c[0] != '#']
+    return contents
+
 def get_gestures(version=2):
     """fetches gestures, and dictionaries mapping between integers and gestures"""
-    with open(f'params/gesturesV{version}.txt') as f:
-        gestures = f.read()
-    # split into lines
-    gestures = gestures.split('\n')
-    # filter out any blank lines or lines that are comments
-    gestures = [g for g in gestures if g != '' and g[0] != '#']
+    gestures = read_ignoring_comments(f'params/gesturesV{version}.txt')
     # get gesture to id dictionary
     g2idx = {g: i for i, g in enumerate(gestures)}
     # get id to gesture dictionary
@@ -28,26 +32,23 @@ def get_gestures(version=2):
 
 def get_VoI():
     """fetches variables of interest from params/VoI.txt"""
-    with open('params/VoI.txt', 'r') as f:
-        VoI = f.read()
-    # split by lines
-    VoI = VoI.split('\n')
-    # filter out any blank lines or lines that are comments
-    VoI = [v for v in VoI if v != '' and v[0] != '#']
+    VoI = read_ignoring_comments('params/VoI.txt')
     return VoI
 
 def get_VoI_drop():
     """fetches variables to drop at prediction time from params/VoI_drop.txt"""
-    with open('params/VoI_drop.txt', 'r') as f:
-        VoI_drop = f.read()
-    # split by lines
-    VoI_drop = VoI_drop.split('\n')
-    # filter out any blank lines or lines that are comments
-    VoI_drop = [v for v in VoI_drop if v != '' and v[0] != '#']
+    VoI_drop = read_ignoring_comments('params/VoI_drop.txt')
     return VoI_drop
 
+def get_derived_feature_dict():
+    """fetches one handed and two handed features two derive"""
+    feature_dict = {}
+    feature_dict['one_handed'] = read_ignoring_comments('params/derived_features_one_handed.txt')
+    feature_dict['two_handed'] = read_ignoring_comments('params/derived_features_two_handed.txt')
+    return feature_dict
+
 def create_dicts(df):
-    """takes a data frame, generates dictionaries for mean and std of columns, and saves them to params/"""
+    """generates dictionaries for mean and std of a pandas df's columns, saving them to params/"""
     with open('params/means_dict.json', 'w') as f:
         json.dump(df.mean().to_dict(), f)
     with open('params/stds_dict.json', 'w') as f:

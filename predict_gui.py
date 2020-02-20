@@ -54,6 +54,9 @@ if derive_features:
 else:
     VoI = [hand + '_' + v for v in VoI for hand in hands]
 
+# get dictionary with one and two handed derived variables to use in prediction
+derived_feature_dict = get_derived_feature_dict()
+
 
 # get mean and standard deviation dictionaries
 # these are used for standardizing input to model
@@ -84,9 +87,10 @@ previous_frame = None
 # indicator the next successfully received frame will be the first
 first_two_handed_frame = True
 
-#capture every nth frame
+# capture every nth frame, depends on what model was trained on
+# 4 is value used for all models so far
 n = 4
-
+ 
 ### initialize variables for fury, angularity, and pred confidence calculations
 raw_fury = 0
 fury = 0
@@ -148,7 +152,7 @@ while True:
     frames_total += 1
     
     packed_frame = collect_frame(frames_total, n, websocket_cache)
-
+    
     if len(packed_frame) > 0:
         frames_recorded += 1
         frame_index = (frames_recorded - 1) % keep
@@ -170,7 +174,7 @@ while True:
                 previous_frame = packed_frame.copy()
             # get the derived features
             if derive_features:
-                new_features = features.get_derived_features(packed_frame)
+                new_features = features.get_derived_features(packed_frame, derived_feature_dict)
                 packed_frame.update(new_features)
             
             # if this is the first two handed frame, generate a sorted list of variables used for prediction, including derived features

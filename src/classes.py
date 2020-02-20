@@ -36,12 +36,12 @@ class CircularBuffer:
         self.len = shape[0]
     
     def add(self, item):
-        # add item to circular buffer
+        """add item to circular buffer to pointer location, then move pointer along by one"""
         self.mem[self.count % self.len] = item
-        # move write pointer along by one place
         self.count += 1
     
     def get(self):
+        """return all items in buffer, ordered from oldest to newest"""
         return np.concatenate((self.mem[self.count % self.len:], self.mem[:self.count % self.len]))
 
 
