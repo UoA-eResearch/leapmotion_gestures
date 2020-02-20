@@ -41,7 +41,7 @@ def get_VoI_drop():
     return VoI_drop
 
 def get_derived_feature_dict():
-    """fetches one handed and two handed features two derive"""
+    """fetches two lists, one each for one and two handed features to derive"""
     feature_dict = {}
     feature_dict['one_handed'] = read_ignoring_comments('params/derived_features_one_handed.txt')
     feature_dict['two_handed'] = read_ignoring_comments('params/derived_features_two_handed.txt')
@@ -173,7 +173,8 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
 
     # at this point, we may wish to derive some more features, and drop some of the original VoI
     if derive_features:
-        df = pd.concat([df, pd.DataFrame.from_records(df.apply(features.get_derived_features, axis=1))], axis=1)
+        derived_feature_dict = get_derived_feature_dict()
+        df = pd.concat([df, pd.DataFrame.from_records(df.apply(features.get_derived_features,args=(derived_feature_dict,),axis=1))], axis=1)
         for hand in hands:
             for VoI in get_VoI_drop():
                 df.drop(hand + '_' + VoI, axis=1, inplace=True)
