@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-
 import websocket
 import config
 import json
-import pandas as pd
 import numpy as np
 from src.data_methods import *
 from src.leap_methods import collect_frame
 from src.classes import *
 import random
-import time
 import tkinter as tk
 import matplotlib.pyplot as plt 
-import tensorflow as tf
+# import tensorflow as tf
+from tensorflow_core.python import keras
 from itertools import cycle
 
 # dead bird from https://www.flickr.com/photos/9516941@N08/3180449008
@@ -34,7 +32,7 @@ if tk_gui:
 
 
 # load the prediction model
-model = tf.keras.models.load_model('models/V3/40f_4hs_bi.h5')
+model = keras.models.load_model('models/V3/40f_4hs_bi.h5')
 # mapping of gestures to integers: need this for decoding model output
 gestures, g2idx, idx2g = get_gestures(version=3)
 # set whether or not to derive features and drop unused VoI

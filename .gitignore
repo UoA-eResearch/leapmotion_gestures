@@ -1,3 +1,5 @@
+
+
 # recordings folder
 recordings/
 data/
@@ -36,6 +38,8 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# had a VERSION file needed for pyinstaller
+astor/
 
 # Installer logs
 pip-log.txt

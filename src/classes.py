@@ -30,6 +30,8 @@ class GUI:
 class CircularBuffer:
     """reasonbly efficient circular buffer for storing last n frames or levels of furiosity etc."""
     def __init__(self, shape):
+        # shape determines the shape of the storage used
+        # The first axis represents time steps, and the pointer increments on this axis, determining what will next be overwritten
         self.mem = np.zeros(shape)
         # store the next position to write too (store % len)
         self.count = 0
