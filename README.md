@@ -39,7 +39,6 @@ When using new derived variables or new VoI for the first time, they won't have 
 ### standardize variables -> split into examples
 The final step is to split the data into examples a certain number of frames long. I have been using somewhere values between 25 to 40 frames long.
 
-
 ## Live Data Flow
 The data flow at prediction time, when using the GUI, looks much the same as during training - the same process of selecting VoI, deriving new variables, and discarding and standardizing the remaining variables still applies. Two differences apply: this is done live, and an 'affective dimension' is captured based on simple transoformations of variables.
 
@@ -75,6 +74,15 @@ This shows a live graph of furiousness, angularity, and prediction confidence. F
 * Prediction confidence is rescaled for best visual effect - some models will output 0.95 when confident, 0.6 when not so confident, rarely predicting below 0.3. It therefore makes sense to map \[0.3,1\] to \[0,1\], setting any value below 0.3 to zero.
 * If the newly calculated value angularity goes above a certain threshold, then the moving average is discarded, and the equation goes from `value = 0.05 * current value + 0.95 * last value` to `value = current value`. This allows for big, sudden changes.
 
+## Executables
+Executables are available in the releases section.
+
+### Building an Executable
+PyInstaller was used to build executables. This needs some tweaking to work with tensorflow 2.0.0:
+* `tensorflow_core` needs to be added as a hidden import; a hook for doing so is in the hooks folder.
+* Importing keras in `predict_gui.py` then needs to be done by importing directly from `tensorflow_core.python`.
+* The import command then looks something like this: `pyinstaller -F --additional-hooks-dir=C:\Users\Andrew\Documents\CeR\GestRec\hooks`
+* Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable. Alternatively, these data dependencies could be specified when building the executable.
 
 ## Areas that need work
 * Furiousness/angularity are calculated only on hand speed and the speed of fingers relative to one another. Thus there are particular ways in which the hands can be move that will be missed by these metrics as they are currently calculated.
