@@ -30,33 +30,42 @@ class GUI:
 class SettingsGUI:
     """simple tkinter gui for setting up variables on application start"""
     def __init__(self, master):
+        # dictionaries of settings and associated values
+        self.settings = {}
+        self.sb_dict = {}
+        self.strvar_dict = {}
+        self.label_dict = {}
+        self.text_format = ("Helvetica", 16)
         # root window of gui
         self.master = master
-        master.title("settings GUI")
-        self.ok = False
-        # setup variables for update interval, including default value
-        self.update_interval = 3
-        self.update_interval_strvar = tk.StringVar()
-        self.update_interval_strvar.set(str(self.update_interval))
-        # setup spinbox for data entry
-        self.update_interval_sb = tk.Spinbox(from_=1, to=20, textvariable=self.update_interval_strvar)
-        self.update_interval_sb.pack(side=tk.LEFT)
+        master.title("settings")
 
-        # setup variables for prediction interval, including default value
-        self.pred_interval = 15
-        self.pred_interval_strvar = tk.StringVar()
-        self.pred_interval_strvar.set(str(self.pred_interval))
-        # setup spinbox for data entry
-        self.pred_interval_sb = tk.Spinbox(from_=1, to=40, textvariable=self.pred_interval_strvar)
-        self.pred_interval_sb.pack(side=tk.RIGHT)
+        # generate spinboxes + labels for some different settings
+        self.create_setting(0, 'prediction interval', 1, 40, 15)
+        self.create_setting(1, 'graph update interval', 1, 20, 3)
 
-        self.ok_button = tk.Button(text='Update Settings', command=self.update_settings)
-        self.ok_button.pack()
+        self.update_button = tk.Button(self.master, text='Update Settings', command=self.update_settings, font=self.text_format)
+        self.update_button.grid()
     
+    def create_setting(self, row, variable, from_, to, default):
+        """generate spinbox + label"""
+        # setup variables for prediction interval, including default value
+        self.settings[variable] = default
+        self.strvar_dict[variable] = tk.StringVar()
+        self.strvar_dict[variable].set(str(self.settings[variable]))
+        # setup spinbox for data entry
+        self.sb_dict[variable] = tk.Spinbox(self.master, from_=from_, to=to, textvariable=self.strvar_dict[variable], font=self.text_format)
+        self.sb_dict[variable].grid(row=row, column=1)
+        # make text label
+        self.label_dict[variable] = tk.Label(self.master, text=variable, font=self.text_format)
+        self.label_dict[variable].grid(row=row, column=0)
+
     def update_settings(self):
         """returns values selected by user"""
-        self.update_interval = int(self.update_interval_sb.get())
-        self.pred_interval = int(self.pred_interval_sb.get())
+        for setting in self.settings.keys():
+            self.settings[setting] = int(self.sb_dict[setting].get())
+        # self.update_interval = int(self.update_interval_sb.get())
+        # self.pred_interval = int(self.pred_interval_sb.get())
 
 class CircularBuffer:
     """reasonbly efficient circular buffer for storing last n frames or levels of furiosity etc."""

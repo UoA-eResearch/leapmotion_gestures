@@ -27,13 +27,16 @@ tk_gui = True
 blit = True
 root = tk.Tk()
 
-settings = SettingsGUI(root)
+# settings = SettingsGUI(root)
 
 if tk_gui:
     root.geometry("600x500")
     gui = GUI(root)
-    
 
+# Create another window for manipulating settings
+settings_window = tk.Toplevel()
+settings_window.geometry("600x400")
+settings_gui = SettingsGUI(settings_window)
 
 
 # load the prediction model
@@ -215,7 +218,7 @@ while True:
 
             ### Update circular buffers and plot
             # doing this every 3 frames seems reasonable right now
-            if frames_total % settings.update_interval == 0:
+            if frames_total % settings_gui.settings['graph update interval'] == 0:
                 # buffers
                 fury_cb.add(fury)
                 angularity_cb.add(angularity)
@@ -276,7 +279,7 @@ while True:
 
             # make a prediction every pred_interval number of frames
             # but first ensure there is a complete training example's worth of consecutive frames
-            if frames_recorded >= keep and frames_recorded % settings.pred_interval == 0:
+            if frames_recorded >= keep and frames_recorded % settings_gui.settings['prediction interval'] == 0:
                 # feed example into model, and get a prediction
                 pred = model.predict(np.expand_dims(model_input_data.get(), axis=0))
                 # sometimes getting nan at the start. Need to find source of this.
