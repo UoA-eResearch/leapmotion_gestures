@@ -27,6 +27,37 @@ class GUI:
         self.label_angularity.pack(side=tk.RIGHT)
 
 
+class SettingsGUI:
+    """simple tkinter gui for setting up variables on application start"""
+    def __init__(self, master):
+        # root window of gui
+        self.master = master
+        master.title("settings GUI")
+        self.ok = False
+        # setup variables for update interval, including default value
+        self.update_interval = 3
+        self.update_interval_strvar = tk.StringVar()
+        self.update_interval_strvar.set(str(self.update_interval))
+        # setup spinbox for data entry
+        self.update_interval_sb = tk.Spinbox(from_=1, to=20, textvariable=self.update_interval_strvar)
+        self.update_interval_sb.pack(side=tk.LEFT)
+
+        # setup variables for prediction interval, including default value
+        self.pred_interval = 15
+        self.pred_interval_strvar = tk.StringVar()
+        self.pred_interval_strvar.set(str(self.pred_interval))
+        # setup spinbox for data entry
+        self.pred_interval_sb = tk.Spinbox(from_=1, to=40, textvariable=self.pred_interval_strvar)
+        self.pred_interval_sb.pack(side=tk.RIGHT)
+
+        self.ok_button = tk.Button(text='Update Settings', command=self.update_settings)
+        self.ok_button.pack()
+    
+    def update_settings(self):
+        """returns values selected by user"""
+        self.update_interval = int(self.update_interval_sb.get())
+        self.pred_interval = int(self.pred_interval_sb.get())
+
 class CircularBuffer:
     """reasonbly efficient circular buffer for storing last n frames or levels of furiosity etc."""
     def __init__(self, shape):

@@ -26,9 +26,14 @@ from itertools import cycle
 tk_gui = True
 blit = True
 root = tk.Tk()
+
+settings = SettingsGUI(root)
+
 if tk_gui:
     root.geometry("600x500")
     gui = GUI(root)
+    
+
 
 
 # load the prediction model
@@ -68,7 +73,7 @@ with open('params/stds_dict.json', 'r') as f:
 keep = model.input.shape[-2]
 # how often to make a prediction (in frames)
 # for now, just set to same frequency as keep
-pred_interval = 20
+# pred_interval = 20
 
 
 # set up circular buffer for storing model input data
@@ -210,7 +215,7 @@ while True:
 
             ### Update circular buffers and plot
             # doing this every 3 frames seems reasonable right now
-            if frames_total % 3 == 0:
+            if frames_total % settings.update_interval == 0:
                 # buffers
                 fury_cb.add(fury)
                 angularity_cb.add(angularity)
@@ -271,7 +276,7 @@ while True:
 
             # make a prediction every pred_interval number of frames
             # but first ensure there is a complete training example's worth of consecutive frames
-            if frames_recorded >= keep and frames_recorded % pred_interval == 0:
+            if frames_recorded >= keep and frames_recorded % settings.pred_interval == 0:
                 # feed example into model, and get a prediction
                 pred = model.predict(np.expand_dims(model_input_data.get(), axis=0))
                 # sometimes getting nan at the start. Need to find source of this.
