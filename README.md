@@ -75,7 +75,17 @@ This shows a live graph of furiousness, angularity, and prediction confidence. F
 * If the newly calculated value angularity goes above a certain threshold, then the moving average is discarded, and the equation goes from `value = 0.05 * current value + 0.95 * last value` to `value = current value`. This allows for big, sudden changes.
 
 ## Executables
-Executables are available in the releases section.
+The prediction/GUI portion of this project is available as an executable file in the releases section. The executable is packaged with python and all required dependencies except the leap motion SDK.
+
+### Using an executable
+First, install the leap motion SDK, if you have not done so already:
+1. Download V4 of the leap motion SDK from [here](https://developer.leapmotion.com/setup/desktop) (this may require you to make an account)
+2. After installing the leap motion SDK, open the Leap Motion Control Panel, tick 'Allow Web Apps', and click Apply
+
+To download and run the executable:
+1. Find the latest release in the releases tab of this repository
+2. Download `leap-motion-gestures.vX.X.zip` and unzip to a folder of your choice
+3. In the unzipped folder, open the file `predict_gui.exe`, and the application will launch
 
 ### Building an Executable
 PyInstaller was used to build executables. This needs some tweaking to work with tensorflow 2.0.0:
@@ -84,7 +94,7 @@ PyInstaller was used to build executables. This needs some tweaking to work with
 * The import command then looks something like this: `pyinstaller -F --additional-hooks-dir=C:\Users\Andrew\Documents\CeR\GestRec\hooks`
 * Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable. Alternatively, these data dependencies could be specified when building the executable.
 
-## Areas that need work
+## Areas that need work/Issues to be aware of
 * Furiousness/angularity are calculated only on hand speed and the speed of fingers relative to one another. Thus there are particular ways in which the hands can be move that will be missed by these metrics as they are currently calculated.
 * Text labels are used on the matplotlib GUI to indicate gesture. These should be replaced by symbols representing the gestures.
 * After resizing or interacting with the matplotlib GUI, old gesture labels become visible around the outside, which looks very messy. This is a consequence of using blitting.
