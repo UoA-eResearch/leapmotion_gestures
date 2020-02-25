@@ -84,7 +84,7 @@ First, install the leap motion SDK, if you have not done so already:
 
 To download and run the executable:
 1. Find the latest release in the releases tab of this repository
-2. Download `leap-motion-gestures.vX.X.zip` and unzip to a folder of your choice
+2. Download `predict_gui.vX.X.zip` and unzip to a folder of your choice
 3. In the unzipped folder, open the file `predict_gui.exe`, and the application will launch
 
 ### Building an Executable
