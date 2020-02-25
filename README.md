@@ -95,8 +95,12 @@ PyInstaller was used to build executables. This needs some tweaking to work with
 * Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable. Alternatively, these data dependencies could be specified when building the executable.
 
 ## Areas that need work/Issues to be aware of
+### GUI issues
 * Furiousness/angularity are calculated only on hand speed and the speed of fingers relative to one another. Thus there are particular ways in which the hands can be move that will be missed by these metrics as they are currently calculated.
 * Text labels are used on the matplotlib GUI to indicate gesture. These should be replaced by symbols representing the gestures.
 * After resizing or interacting with the matplotlib GUI, old gesture labels become visible around the outside, which looks very messy. This is a consequence of using blitting.
 * With blitting, frame rate is acceptable in the matplotlib GUI. But there still exist upper limits on the upper limit of timesteps that can be displayed, and frame rate. This part of the code might be a lot faster if rewritten in pyqtgraph.
-* Accuracy isn't great. This might be resolved by different features, architecture, or more training data.
+### Model issues
+* If the order of gestures is changed in a gestures txt file (in the params folder), then this will change the indices of gestures, and **a model will no longer predict correctly if it was trained using a file with a different order.**
+* At the moment, there is no information about what model was trained with what gestures, normalization dictionary, or variables of interest. It is therefore difficult to use old models - if the VoI file has changed, then the model will no longer work. A better work flow would see each model saved with its own parameter files.
+* Accuracy isn't great. This might be resolved by using different features, architectures, or more training data from a variety of people. Some gestures are also just objectively difficult for the leap device to pick up; for example, a middle finger vs index finger extended from a fist often look the same to the device, with the middle finger often being mistaken for an index finger.
