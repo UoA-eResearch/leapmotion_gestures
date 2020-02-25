@@ -28,44 +28,56 @@ class GUI:
 
 
 class SettingsGUI:
-    """simple tkinter gui for setting up variables on application start"""
+    """tkinter gui for changing settings during application run"""
     def __init__(self, master):
-        # dictionaries of settings and associated values
+        # dictionaries of current settings values 
         self.settings = {}
+        # dictionary of tk spinbox objects
         self.sb_dict = {}
+        # dictionary of string variables, for setting default spinbox values
         self.strvar_dict = {}
+        # dictionary of labels used to demarcate spinboxes
         self.label_dict = {}
+        # set univeral text format for all spinboxes and labels
         self.text_format = ("Helvetica", 16)
-        # root window of gui
+        # row of next spinbox/label, += 1 every time a spinbox is created
+        self.next_row = 0
+        # root window of settings gui
         self.master = master
         master.title("settings")
 
         # generate spinboxes + labels for some different settings
-        self.create_setting(0, 'prediction interval', 1, 40, 15)
-        self.create_setting(1, 'graph update interval', 1, 20, 3)
+        self.create_setting('prediction interval', 1, 40, 1, 15)
+        self.create_setting('graph update interval', 1, 20, 1, 3)
+        self.create_setting('fury beta', 0.8, 1, 0.005, 0.9)
+        self.create_setting('angularity beta', 0.8, 1, 0.005, 0.975)
+        self.create_setting('confidence beta', 0.8, 1, 0.005, 0.98)
 
         self.update_button = tk.Button(self.master, text='Update Settings', command=self.update_settings, font=self.text_format)
         self.update_button.grid()
     
-    def create_setting(self, row, variable, from_, to, default):
+    def create_setting(self, variable, from_, to, increment, default):
         """generate spinbox + label"""
-        # setup variables for prediction interval, including default value
+        # set up default value of spinbox
         self.settings[variable] = default
         self.strvar_dict[variable] = tk.StringVar()
         self.strvar_dict[variable].set(str(self.settings[variable]))
-        # setup spinbox for data entry
-        self.sb_dict[variable] = tk.Spinbox(self.master, from_=from_, to=to, textvariable=self.strvar_dict[variable], font=self.text_format)
-        self.sb_dict[variable].grid(row=row, column=1)
-        # make text label
+        # set up spinbox the spinbox
+        self.sb_dict[variable] = tk.Spinbox(self.master, from_=from_, to=to, increment=increment, textvariable=self.strvar_dict[variable], font=self.text_format)
+        self.sb_dict[variable].grid(row=self.next_row, column=1)
+        # set up corresponding text label
         self.label_dict[variable] = tk.Label(self.master, text=variable, font=self.text_format)
-        self.label_dict[variable].grid(row=row, column=0)
+        self.label_dict[variable].grid(row=self.next_row, column=0)
+        # increment row number
+        self.next_row += 1
 
     def update_settings(self):
-        """returns values selected by user"""
+        """update the settings dictionary to reflect spinbox values"""
         for setting in self.settings.keys():
-            self.settings[setting] = int(self.sb_dict[setting].get())
-        # self.update_interval = int(self.update_interval_sb.get())
-        # self.pred_interval = int(self.pred_interval_sb.get())
+            if '.' in self.sb_dict[setting].get():
+                self.settings[setting] = float(self.sb_dict[setting].get())
+            else:
+                self.settings[setting] = int(self.sb_dict[setting].get())
 
 class CircularBuffer:
     """reasonbly efficient circular buffer for storing last n frames or levels of furiosity etc."""

@@ -33,7 +33,7 @@ if tk_gui:
     root.geometry("600x500")
     gui = GUI(root)
 
-# Create another window for manipulating settings
+# Create another window for settings
 settings_window = tk.Toplevel()
 settings_window.geometry("600x400")
 settings_gui = SettingsGUI(settings_window)
@@ -128,9 +128,6 @@ plt.xlim(-1,31)
 
 plt.show(block=False)
 
-if blit == True:
-    axbackground = fig.canvas.copy_from_bbox(ax.bbox)
-
 current_label = plt.text(27,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
 # old labels that drift across the screen
 old_labels = []
@@ -200,7 +197,7 @@ while True:
             # calculate raw furiosness, looking at how fast hands are moving
             raw_fury = features.get_fury2(packed_frame, previous_complete_frame)
             # update moving average
-            fury = beta_fury * fury + (1 - beta_fury) * raw_fury
+            fury = settings_gui.settings['fury beta'] * fury + (1 - settings_gui.settings['fury beta']) * raw_fury
             # calculate raw angularity, looking at how movement levels have changed
             raw_angularity = features.get_angularity(raw_fury, previous_fury)
             # a sudden movement will temporarily drive up raw angularity
@@ -209,12 +206,12 @@ while True:
                 angularity = raw_angularity
             # otherwise, update moving average
             else:
-                angularity = beta_angularity * angularity + (1 - beta_angularity) * raw_angularity
+                angularity = settings_gui.settings['angularity beta'] * angularity + (1 - settings_gui.settings['angularity beta']) * raw_angularity
             # how often to update the previous value of fury will change the sensitivity of angularity
             if frames_total % 10 == 0:
                 previous_fury = raw_fury
             # update prediction confidence moving average
-            pred_confidence = beta_confidence * pred_confidence + (1 - beta_confidence) * adjusted_raw_pred_confidence
+            pred_confidence = settings_gui.settings['confidence beta'] * pred_confidence + (1 - settings_gui.settings['confidence beta']) * adjusted_raw_pred_confidence
 
             ### Update circular buffers and plot
             # doing this every 3 frames seems reasonable right now
