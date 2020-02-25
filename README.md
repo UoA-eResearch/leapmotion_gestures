@@ -39,7 +39,6 @@ When using new derived variables or new VoI for the first time, they won't have 
 ### standardize variables -> split into examples
 The final step is to split the data into examples a certain number of frames long. I have been using somewhere values between 25 to 40 frames long.
 
-
 ## Live Data Flow
 The data flow at prediction time, when using the GUI, looks much the same as during training - the same process of selecting VoI, deriving new variables, and discarding and standardizing the remaining variables still applies. Two differences apply: this is done live, and an 'affective dimension' is captured based on simple transoformations of variables.
 
@@ -75,10 +74,33 @@ This shows a live graph of furiousness, angularity, and prediction confidence. F
 * Prediction confidence is rescaled for best visual effect - some models will output 0.95 when confident, 0.6 when not so confident, rarely predicting below 0.3. It therefore makes sense to map \[0.3,1\] to \[0,1\], setting any value below 0.3 to zero.
 * If the newly calculated value angularity goes above a certain threshold, then the moving average is discarded, and the equation goes from `value = 0.05 * current value + 0.95 * last value` to `value = current value`. This allows for big, sudden changes.
 
+## Executables
+The prediction/GUI portion of this project is available as an executable file in the releases section. The executable is packaged with python and all required dependencies except the leap motion SDK.
 
-## Areas that need work
+### Using an executable
+First, install the leap motion SDK, if you have not done so already:
+1. Download V4 of the leap motion SDK from [here](https://developer.leapmotion.com/setup/desktop) (this may require you to make an account)
+2. After installing the leap motion SDK, open the Leap Motion Control Panel, tick 'Allow Web Apps', and click Apply
+
+To download and run the executable:
+1. Find the latest release in the releases tab of this repository
+2. Download `leap-motion-gestures.vX.X.zip` and unzip to a folder of your choice
+3. In the unzipped folder, open the file `predict_gui.exe`, and the application will launch
+
+### Building an Executable
+PyInstaller was used to build executables. This needs some tweaking to work with tensorflow 2.0.0:
+* `tensorflow_core` needs to be added as a hidden import; a hook for doing so is in the hooks folder.
+* Importing keras in `predict_gui.py` then needs to be done by importing directly from `tensorflow_core.python`.
+* The import command then looks something like this: `pyinstaller -F --additional-hooks-dir=C:\Users\Andrew\Documents\CeR\GestRec\hooks`
+* Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable. Alternatively, these data dependencies could be specified when building the executable.
+
+## Areas that need work/Issues to be aware of
+### GUI issues
 * Furiousness/angularity are calculated only on hand speed and the speed of fingers relative to one another. Thus there are particular ways in which the hands can be move that will be missed by these metrics as they are currently calculated.
 * Text labels are used on the matplotlib GUI to indicate gesture. These should be replaced by symbols representing the gestures.
 * After resizing or interacting with the matplotlib GUI, old gesture labels become visible around the outside, which looks very messy. This is a consequence of using blitting.
 * With blitting, frame rate is acceptable in the matplotlib GUI. But there still exist upper limits on the upper limit of timesteps that can be displayed, and frame rate. This part of the code might be a lot faster if rewritten in pyqtgraph.
-* Accuracy isn't great. This might be resolved by different features, architecture, or more training data.
+### Model issues
+* If the order of gestures is changed in a gestures txt file (in the params folder), then this will change the indices of gestures, and **a model will no longer predict correctly if it was trained using a file with a different order.**
+* At the moment, there is no information about what model was trained with what gestures, normalization dictionary, or variables of interest. It is therefore difficult to use old models - if the VoI file has changed, then the model will no longer work. A better work flow would see each model saved with its own parameter files.
+* Accuracy isn't great. This might be resolved by using different features, architectures, or more training data from a variety of people. Some gestures are also just objectively difficult for the leap device to pick up; for example, a middle finger vs index finger extended from a fist often look the same to the device, with the middle finger often being mistaken for an index finger.
