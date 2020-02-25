@@ -91,8 +91,9 @@ To download and run the executable:
 PyInstaller was used to build executables. This needs some tweaking to work with tensorflow 2.0.0:
 * `tensorflow_core` needs to be added as a hidden import; a hook for doing so is in the hooks folder.
 * Importing keras in `predict_gui.py` then needs to be done by importing directly from `tensorflow_core.python`.
-* The import command then looks something like this: `pyinstaller -F --additional-hooks-dir=C:\Users\Andrew\Documents\CeR\GestRec\hooks`
+* The import command then looks something like this: `pyinstaller --additional-hooks-dir=some\path\to\GestRec\hooks`
 * Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable. Alternatively, these data dependencies could be specified when building the executable.
+* If using pyinstaller to generate a folder, rather than a single file exe, then `tensorflow_core/python/_pywrap_tensorflow_internal.pyd` and `tensorflow_core/python/_pywrap_tensorflow_internal.lib` are large, and can be safely deleted.
 
 ## Areas that need work/Issues to be aware of
 ### GUI issues
