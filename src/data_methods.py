@@ -152,6 +152,13 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
     len_with_na = len(df)
     # filter to gesture + variables for hands of interest
     df = df.filter(regex='|'.join(hands + ['gesture']))
+    # filter out any rows that have a gesture not in g2idx
+    allowable_gestures = [g in g2idx.keys() for g in df['gesture']]
+    if False in allowable_gestures:
+        n_rows = len(allowable_gestures)
+        invalid_rows = n_rows - sum(allowable_gestures)
+        print(f'Warning: {n_rows} of {n_rows} rows contain gestures not in g2idx')
+        df = df[allowable_gestures]
     if len(hands) == 1:
         # if we are only interested in one hand, then at this point the df will only contain cols for that hand
         # if the other hand was active while the hand of interest wasn't, this will leave NA rows
