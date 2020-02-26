@@ -115,26 +115,27 @@ beta_confidence = 0.98
 confidence_zero = 0.5
 
 # set up storage for fury and angularity history
-angularity_cb = CircularBuffer((30,))
-fury_cb = CircularBuffer((30,))
+x_axis_range = settings_gui.settings['x axis range']
+angularity_cb = CircularBuffer((x_axis_range,))
+fury_cb = CircularBuffer((x_axis_range,))
 # also need history of prediction confidence
-confidence_cb = CircularBuffer((30,))
+confidence_cb = CircularBuffer((x_axis_range,))
 
 # set up plotting
 colour = cycle('bgrcmk')
 fig, ax = plt.subplots(figsize=(12,8))
 plt.ylim(-0.05,1.05)
-plt.xlim(-1,31)
+plt.xlim(-x_axis_range/9,x_axis_range + x_axis_range/9)
 
 plt.show(block=False)
 
-current_label = plt.text(27,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+current_label = plt.text(x_axis_range - 3,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
 # old labels that drift across the screen
 old_labels = []
 # old labels that are now stationary
 stationary_labels = []
 # final x position that old labels drift to
-final_label_x_position = -4
+final_label_x_position = -x_axis_range/12
 linewidths=2
 line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
 line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
@@ -155,6 +156,36 @@ while True:
     frames_total += 1
     
     packed_frame = collect_frame(frames_total, n, websocket_cache)
+
+    # check if the time range to graph has changed
+    if x_axis_range != settings_gui.settings['x axis range']:
+        new_x_axis_range = settings_gui.settings['x axis range']
+        # create new circular buffers
+        prev_angularity_data = angularity_cb.get()
+        prev_fury_data = fury_cb.get()
+        prev_confidence_data = confidence_cb.get()
+        angularity_cb = CircularBuffer((new_x_axis_range,))
+        fury_cb = CircularBuffer((new_x_axis_range,))
+        confidence_cb = CircularBuffer((new_x_axis_range,))
+        for i in range(len(prev_angularity_data)):
+            angularity_cb.add(prev_angularity_data[i])
+            fury_cb.add(prev_fury_data[i])
+            confidence_cb.add(prev_confidence_data[i])
+        
+        # Should be able to remove all old labels, something like this:
+        for old_l in old_labels:
+            old_l.remove()
+        old_labels = []
+
+        x_axis_range = new_x_axis_range
+
+        plt.xlim(-x_axis_range/9,x_axis_range + x_axis_range/9)
+        line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
+        line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
+        line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
+        plt.draw()
+
+
     
     if len(packed_frame) > 0:
         frames_recorded += 1
@@ -229,10 +260,10 @@ while True:
                 # create new gesture label if needed
                 if gesture_change == True:
                     old_labels.append(current_label)
-                    current_label = plt.text(27,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
+                    current_label = plt.text(x_axis_range - 3,pred_confidence,gesture, bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
                     gesture_change = False
                 else:
-                    current_label.set_position((27, pred_confidence))
+                    current_label.set_position((x_axis_range - 3, pred_confidence))
                 for old_l in old_labels:
                     pos = old_l.get_position()
                     if pos[0] <= final_label_x_position:
