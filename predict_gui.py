@@ -125,7 +125,8 @@ confidence_cb = CircularBuffer((x_axis_range,))
 colour = cycle('bgrcmk')
 fig, ax = plt.subplots(figsize=(12,8))
 plt.ylim(-0.05,1.05)
-plt.xlim(-x_axis_range/9,x_axis_range + x_axis_range/9)
+whitespace = 40/9
+plt.xlim(-whitespace,x_axis_range + whitespace)
 
 plt.show(block=False)
 
@@ -135,12 +136,12 @@ old_labels = []
 # old labels that are now stationary
 stationary_labels = []
 # final x position that old labels drift to
-final_label_x_position = -x_axis_range/12
+final_label_x_position = -10/4
 linewidths=2
 line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
 line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
 line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
-# currently the legend is drawn over as soon as the plot is updated
+# currently the legend is drawn over as soon as the plot is updated, needs to be fixed
 plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
 
 gesture = 'no_gesture'
@@ -179,7 +180,7 @@ while True:
 
         x_axis_range = new_x_axis_range
 
-        plt.xlim(-x_axis_range/9,x_axis_range + x_axis_range/9)
+        plt.xlim(-whitespace,x_axis_range + whitespace)
         line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
         line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
         line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
