@@ -45,8 +45,9 @@ for file in os.scandir('models/prediction_model'):
         model = keras.models.load_model(file)
 assert model != None, 'No h5 file found in prediction model folder'
 
+model_path = 'models/prediction_model/'
 # mapping of gestures to integers: need this for decoding model output
-gestures, g2idx, idx2g = get_gestures(version=3, path='models/prediction_model/')
+gestures, g2idx, idx2g = get_gestures(version=3, path=model_path)
 # set whether or not to derive features and drop unused VoI
 derive_features = True
 
@@ -55,9 +56,9 @@ websocket_cache = {}
 # which hands will be used in predicting?
 hands = ['left', 'right']
 # Get the VoI that are used as predictors
-VoI = get_VoI(path='models/prediction_model/')
+VoI = get_VoI(path=model_path)
 if derive_features:
-    VoI_drop = get_VoI_drop(path='models/prediction_model/')
+    VoI_drop = get_VoI_drop(path=model_path)
     VoI_predictors = [v for v in VoI if v not in VoI_drop]
     # use these to get VoI, labelled by hand
     VoI_predictors = [hand + '_' + v for v in VoI_predictors for hand in hands]
@@ -65,7 +66,7 @@ else:
     VoI = [hand + '_' + v for v in VoI for hand in hands]
 
 # get dictionary with one and two handed derived variables to use in prediction
-derived_feature_dict = get_derived_feature_dict(path='models/prediction_model/')
+derived_feature_dict = get_derived_feature_dict(path=model_path)
 
 
 # get mean and standard deviation dictionaries
@@ -206,7 +207,13 @@ while True:
                 packed_frame = previous_frame.copy()
                 if frames_total % 5 == 0:
                     print('Warning: a hand is missing')
+                if not hand_missing:
+                    gui.img = tk.PhotoImage(file=f'data/images/hand_missing.png')
+                    gui.label.configure(image=gui.img)
+                    hand_missing = True
+
             else:
+                hand_missing = False
                 previous_frame = packed_frame.copy()
             # get the derived features
             if derive_features:
@@ -318,8 +325,9 @@ while True:
                     gesture_change = True
                     gesture = idx2g[np.argmax(pred)]
                 if pred[0][np.argmax(pred)] > settings_gui.settings['min conf. to change image'] and tk_gui:
-                    gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
-                    gui.label.configure(image=gui.img)
+                    if not hand_missing:
+                        gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
+                        gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
 
     
