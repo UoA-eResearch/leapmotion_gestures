@@ -115,9 +115,6 @@ beta_fury = 0.9
 beta_angularity = 0.975
 beta_confidence = 0.98
 
-# the prediction confidence is normally high. Rescale between confidence_zero and 1.
-confidence_zero = 0.5
-
 # set up storage for fury and angularity history
 x_axis_range = settings_gui.settings['x axis range']
 angularity_cb = CircularBuffer((x_axis_range,))
@@ -292,11 +289,6 @@ while True:
                 else:
                     plt.draw()
                 fig.canvas.flush_events()
-
-
-            # if frames_total % 10 == 0:
-                # print(f'angularity: {angularity:.2f} fury: {fury:.2f}')
-                # print(packed_frame['right_palmPosition_0'])
             
             # update gui for anger and fury
             if tk_gui:
@@ -319,13 +311,13 @@ while True:
                 # sometimes getting nan at the start. Need to find source of this.
                 if not np.isnan(pred[0][0]):
                     # confidence of prediction is used for plotting. Often very high. Rescale.
-                    adjusted_raw_pred_confidence = max((np.max(pred)-confidence_zero) / (1-confidence_zero), 0)
+                    adjusted_raw_pred_confidence = max((np.max(pred)-settings_gui.settings['effective confidence zero']) / (1-settings_gui.settings['effective confidence zero']), 0)
                 print(adjusted_raw_pred_confidence)
                 print(idx2g[np.argmax(pred)])
                 if idx2g[np.argmax(pred)] != gesture:
                     gesture_change = True
                     gesture = idx2g[np.argmax(pred)]
-                if pred[0][np.argmax(pred)] > 0.5 and tk_gui:
+                if pred[0][np.argmax(pred)] > settings_gui.settings['min conf. to change image'] and tk_gui:
                     gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                     gui.label.configure(image=gui.img)
                     gui.gesture.set(idx2g[np.argmax(pred)].replace('_', ' '))
