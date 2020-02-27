@@ -62,6 +62,8 @@ There are two main GUI elements that both show the same information (gesture pre
 1. A Tkinter window
 2. A matplotlib graph
 
+Unlike at model training time, some model specific parameters are loaded from the `prediction_model` folder. A new model and associated parameters may be put in this folder.
+
 ### The Tkinter Window
 Contains:
 * Text and an image representing the current prediction (provided the prediction meets a certain threshold of significane - we don't want the window being updated continually by low confidence predictions)
