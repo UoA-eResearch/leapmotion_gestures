@@ -43,8 +43,8 @@ if __name__ == "__main__":
     message = ''
     # frame at which user is notified of impending change
     notify_frame = 0
-    mode = int(input('Select mode:\n1 for alternating between gestures randomly (short time per gesture)\
-        \n2 for performing each gesture in succession (longer time for each gesture)\
+    mode = int(input('Select mode:\n1 for alternating between gestures randomly\
+        \n2 for performing each gesture in succession\
         \n3 for alternating no gesture with other gestures in sequential order\
         \n4 for continuously performing a single gesture\
         \n5 for viewing variables recorded\n'))
@@ -55,12 +55,7 @@ if __name__ == "__main__":
         # seconds warning to receive before performing a gesture
         warn_time = 1
         # delay between gestures
-        if mode == 1:
-            delay = 4
-        elif mode == 2:
-            delay = 10
-        elif mode == 3:
-            delay = 2.2
+        delay = float(input('enter time length for each gesture: '))
     elif mode == 4:
         print('Available gestures:')
         for i, g in enumerate(gestures):
@@ -70,6 +65,7 @@ if __name__ == "__main__":
         gesture = gestures[gesture_n]
     elif mode == 5:
         record = False
+        print_variable = input('input variable name (e.g. right_grabAngle): ')
     else:
         raise Exception('Input not a valid mode')
     try:
@@ -87,9 +83,6 @@ if __name__ == "__main__":
                 
                 if record:
                     frames.append(packed_frame)
-
-                # if len(frames) % 300 == 0:
-                #     print(f"{len(frames)} frames captured")
 
                 # change to the next gesture
                 if (mode == 1 or mode == 2) and change_time < time.time():
@@ -130,22 +123,17 @@ if __name__ == "__main__":
                     # the user has been warned
                     warned = True
                 elif mode == 5:
-                    if frames_total % 100 == 0:
-                        # new_features = features.get_derived_features(packed_frame, hands=['right'])
-                        # new_features = {k: round(v, 1) for k, v in new_features.items()}
-                    # direction = np.round(np.array([packed_frame[f'right_direction_{i}'] for i in (0,1,2)]), 1)
-                    
-                        print('websocket cache:',websocket_cache)
-                        print('config devices:', config.devices)
-                        # print(new_features['right_wrist_angle'])
-                        print(packed_frame['right_grabAngle'])
-                        # print(packed_frame['right_index_tipPosition_0'] - packed_frame['right_palmPosition_0'])
-                        
+                    if frames_total % 1 == 0:
+                        try:
+                            print(print_variable + ': ', packed_frame[print_variable])
+                        except KeyError:
+                            print(print_variable + ' not found')                    
 
 
                             
     except KeyboardInterrupt:
-        fn = input("Enter filename to save recording to: ")
-        df = pd.DataFrame(frames)
-        df.to_csv(f"recordings/{fn}.csv", index=False)
-        print("Saved")
+        if mode != 5:
+            fn = input("Enter filename to save recording to: ")
+            df = pd.DataFrame(frames)
+            df.to_csv(f"recordings/{fn}.csv", index=False)
+            print("Saved")

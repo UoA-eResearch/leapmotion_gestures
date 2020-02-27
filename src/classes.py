@@ -53,6 +53,7 @@ class SettingsGUI:
         self.create_setting('angularity beta', 0.8, 1, 0.005, 0.975)
         self.create_setting('confidence beta', 0.8, 1, 0.005, 0.98)
         self.create_setting('x axis range', 1, 150, 1, 30)
+        self.create_setting('every nth frame to model', 1, 10, 1, 5)
 
         self.update_button = tk.Button(self.master, text='Update Settings', command=self.update_settings, font=self.text_format)
         self.update_button.grid()

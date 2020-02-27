@@ -21,30 +21,30 @@ def read_ignoring_comments(filepath):
     contents = [c for c in contents if c != '' and c[0] != '#']
     return contents
 
-def get_gestures(version=2):
+def get_gestures(version=2, path = 'params/'):
     """fetches gestures, and dictionaries mapping between integers and gestures"""
-    gestures = read_ignoring_comments(f'params/gesturesV{version}.txt')
+    gestures = read_ignoring_comments(f'{path}gesturesV{version}.txt')
     # get gesture to id dictionary
     g2idx = {g: i for i, g in enumerate(gestures)}
     # get id to gesture dictionary
     idx2g = {i: g for i, g in enumerate(gestures)}
     return gestures, g2idx, idx2g
 
-def get_VoI():
+def get_VoI(path = 'params/'):
     """fetches variables of interest from params/VoI.txt"""
-    VoI = read_ignoring_comments('params/VoI.txt')
+    VoI = read_ignoring_comments(f'{path}VoI.txt')
     return VoI
 
-def get_VoI_drop():
+def get_VoI_drop(path = 'params/'):
     """fetches variables to drop at prediction time from params/VoI_drop.txt"""
-    VoI_drop = read_ignoring_comments('params/VoI_drop.txt')
+    VoI_drop = read_ignoring_comments(f'{path}VoI_drop.txt')
     return VoI_drop
 
-def get_derived_feature_dict():
+def get_derived_feature_dict(path = 'params/'):
     """fetches two lists, one each for one and two handed features to derive"""
     feature_dict = {}
-    feature_dict['one_handed'] = read_ignoring_comments('params/derived_features_one_handed.txt')
-    feature_dict['two_handed'] = read_ignoring_comments('params/derived_features_two_handed.txt')
+    feature_dict['one_handed'] = read_ignoring_comments(f'{path}derived_features_one_handed.txt')
+    feature_dict['two_handed'] = read_ignoring_comments(f'{path}derived_features_two_handed.txt')
     return feature_dict
 
 def create_dicts(df):
@@ -157,7 +157,7 @@ def df2X_y(df, g2idx = {'no_gesture': 0, 'so_so': 1, 'open_close': 2, 'maybe': 3
     if False in allowable_gestures:
         n_rows = len(allowable_gestures)
         invalid_rows = n_rows - sum(allowable_gestures)
-        print(f'Warning: {n_rows} of {n_rows} rows contain gestures not in g2idx')
+        print(f'Warning: {invalid_rows} of {n_rows} rows contain gestures not in g2idx')
         df = df[allowable_gestures]
     if len(hands) == 1:
         # if we are only interested in one hand, then at this point the df will only contain cols for that hand
@@ -317,6 +317,8 @@ def folder2examples(folder='data/loops/', target_fps=30,
     df = pd.DataFrame()
     # read in all training data from folder
     for file in os.scandir(folder):
+        print(' ')
+        print(file)
         df2 = CSV2VoI(file, target_fps=target_fps)
         df = pd.concat([df, df2], ignore_index=True)
     X_contiguous, y_contiguous = df2X_y(df, g2idx, hands=hands, standardize=standardize, dicts_gen=dicts_gen, mirror=False, derive_features=derive_features)

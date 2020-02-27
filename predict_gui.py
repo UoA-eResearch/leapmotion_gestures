@@ -38,11 +38,15 @@ settings_window = tk.Toplevel()
 settings_window.geometry("600x400")
 settings_gui = SettingsGUI(settings_window)
 
-
+model = None
 # load the prediction model
-model = keras.models.load_model('models/V3/40f_4hs_bi.h5')
+for file in os.scandir('models/prediction_model'):
+    if file.path[-2:] == 'h5':
+        model = keras.models.load_model(file)
+assert model != None, 'No h5 file found in prediction model folder'
+
 # mapping of gestures to integers: need this for decoding model output
-gestures, g2idx, idx2g = get_gestures(version=3)
+gestures, g2idx, idx2g = get_gestures(version=3, path='models/prediction_model/')
 # set whether or not to derive features and drop unused VoI
 derive_features = True
 
@@ -51,9 +55,9 @@ websocket_cache = {}
 # which hands will be used in predicting?
 hands = ['left', 'right']
 # Get the VoI that are used as predictors
-VoI = get_VoI()
+VoI = get_VoI(path='models/prediction_model/')
 if derive_features:
-    VoI_drop = get_VoI_drop()
+    VoI_drop = get_VoI_drop(path='models/prediction_model/')
     VoI_predictors = [v for v in VoI if v not in VoI_drop]
     # use these to get VoI, labelled by hand
     VoI_predictors = [hand + '_' + v for v in VoI_predictors for hand in hands]
@@ -61,7 +65,7 @@ else:
     VoI = [hand + '_' + v for v in VoI for hand in hands]
 
 # get dictionary with one and two handed derived variables to use in prediction
-derived_feature_dict = get_derived_feature_dict()
+derived_feature_dict = get_derived_feature_dict(path='models/prediction_model/')
 
 
 # get mean and standard deviation dictionaries
@@ -304,7 +308,8 @@ while True:
             frame = np.empty(model.input.shape[-1])
             for i, p in enumerate(all_predictors):
                 frame[i] = (packed_frame[p] - means_dict[p]) / stds_dict[p]
-            model_input_data.add(frame)
+            if frames_total % settings_gui.settings['every nth frame to model'] == 0:
+                model_input_data.add(frame)
 
             # make a prediction every pred_interval number of frames
             # but first ensure there is a complete training example's worth of consecutive frames

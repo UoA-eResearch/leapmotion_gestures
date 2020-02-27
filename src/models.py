@@ -91,7 +91,6 @@ def plt_metric(history, metric='loss'):
     plt.ylabel(metric)
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
 
 
 def plt_pred(y, pred):
@@ -103,5 +102,4 @@ def plt_pred(y, pred):
     plt.ylabel('label')
     plt.xlabel('time step')
     plt.legend(['predicted', 'labels'], loc='upper left')
-    plt.show()
 

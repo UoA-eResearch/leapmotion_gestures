@@ -23,7 +23,8 @@ wave
 typing
 # using one hand to 'index' the other
 counting_hands_together
-middle_finger
+## temporarily ommitting
+#middle_finger
 # finger drawing includes shapes, lines etc.
 finger_drawing
 
@@ -50,8 +51,9 @@ gather_leaves
 robotic_arm
 # as though drinking water
 cup_hands
+## temporarily ommitting
 # not like finger drawing. Hand position is like holding pen or brush.
-drawing
+#drawing
 
 
 
