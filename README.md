@@ -77,6 +77,7 @@ Contains options for:
 * effective confidence zero - the model generally has high confidence, this value controls rescaling, so that \[effective, 1\] is mapped to \[0, 1\]
 * min conf. to change image - we don't want the image changing constantly because of low confidence predictions
 * every nth frame to model - a model might be trained on 5fps, but the frame rate of data used in the script is roughly 25fps. This value should be around 5 for models such as this. Each model's description.txt file will say the fps it was trained with.
+* labels gather? - 1 indicates labels will be drawn to the left, 0 indicates not. WARNING: having this option on will make things become slower and slower, as these have to be redrawn over the background.
 
 ### The Tkinter Window
 Contains:
@@ -118,6 +119,7 @@ PyInstaller was used to build executables. This needs some tweaking to work with
 * Furiousness/angularity are calculated only on hand speed and the speed of fingers relative to one another. Thus there are particular ways in which the hands can be move that will be missed by these metrics as they are currently calculated.
 * Text labels are used on the matplotlib GUI to indicate gesture. These should be replaced by symbols representing the gestures.
 * With blitting, frame rate is acceptable in the matplotlib GUI. But on my laptop there still exist upper limits on the number of timesteps that can be displayed, and frame rate. This part of the code might be a lot faster if rewritten in pyqtgraph.
+* if `labels gather?` is set to 1, old labels will gather at the left, and because they need to be redrawn every time the graph is refreshed, things will run slower and slower as labels build up.
 ### Model issues
 * If the order of gestures is changed in a gestures txt file (in the params folder), then this will change the indices of gestures, and a model will no longer predict correctly if it was trained using a file with a different order. This is mitigated somewhat by deploying every model as a folder containing the gestures text file it was trained with.
 * Models for prediction are stored in a folder with a copy of the parameters used to train them. These parameter files must be copied manually. Ideally, this would be automated.
