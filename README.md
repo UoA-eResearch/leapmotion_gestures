@@ -19,7 +19,7 @@ A good place to start is the notebook `exploration-many2one.ipynb`, which works 
 ### raw data -> select variables of interest
 A leap motion device outputs a lof of extraneous information, much of it redundant for prediction. The file `VoI.txt` controls which variables of interest (VoI) will be selected for when using the methods responsible for collecting and processing data from the leap motion device.
 
-During this stage, the frame rate will also be checked, and every nth frame taken to aproximate a target frame rate. The target frame rate I have used is 25fps.
+During this stage, the frame rate will also be checked, and every nth frame taken to aproximate a target frame rate. The target frame rate I have used is 5fps. I originally used 25fps, but the higher frame rate isn't helpful.
 
 ### select variables of interest -> calculate some derived variables
 We may want higher level variables that are more informative for our model. Examples of this include using fingertip positions to calculate their distances from the plain the palm of the hand lies on, or their distance to the palm of the hand. This sort of information is much more informative than using the x/y/z coordinates of every fingertip relative to the leap motion device. This process is controlled as follows:
@@ -40,7 +40,7 @@ When using new derived variables or new VoI for the first time, they won't have 
 The final step is to split the data into examples a certain number of frames long. I have been using somewhere values between 25 to 40 frames long.
 
 ## Live Data Flow
-The data flow at prediction time, when using the GUI, looks much the same as during training - the same process of selecting VoI, deriving new variables, and discarding and standardizing the remaining variables still applies. Two differences apply: this is done live, and an 'affective dimension' is captured based on simple transoformations of variables.
+The data flow at prediction time, when using the GUI, looks much the same as during training - the same process of selecting VoI, deriving new variables, and discarding and standardizing the remaining variables still applies. But rather than using the parameters stored in the parameters folder, the model, along with its parameters, are loaded from `models/prediction_model/`. That way, any model with different parameters can be substituted into the `prediction_model` folder.
 
 ### Facilitating live prediction
 Live prediction is achieved as follows:
@@ -64,9 +64,21 @@ There are two main GUI elements that both show the same information (gesture pre
 
 Unlike at model training time, some model specific parameters are loaded from the `prediction_model` folder. A new model and associated parameters may be put in this folder.
 
+### The Settings Window
+Contains options for:
+* prediction interval - how often should the model make a predictions, measured in frames
+* graph update interval - how often should the graph refresh, measured in frames
+* fury beta - how much of the old value of fury to keep in the new value that is calculated, higher values make fury smoother
+* angularity beta - like fury beta, but for angularity
+* confidence beta - like fury beta, but for prediction confidence
+* x axis range - how many time steps to graph
+* effective confidence zero - the model generally has high confidence, this value controls rescaling, so that \[effective, 1\] is mapped to \[0, 1\]
+* min conf. to change image - we don't want the image changing constantly because of low confidence predictions
+* every nth frame to model - a model might be trained on 5fps, but the frame rate of data used in the script is roughly 25fps. This value should be around 5 for models such as this. Each model's description.txt file will say the fps it was trained with.
+
 ### The Tkinter Window
 Contains:
-* Text and an image representing the current prediction (provided the prediction meets a certain threshold of significane - we don't want the window being updated continually by low confidence predictions)
+* Text and an image representing the current prediction (provided the prediction meets a certain threshold of significance - we don't want the window being updated continually by low confidence predictions)
 * text 'Fury' and 'Angularity', each coloured somewhere between green and red, depending on the levels of these recorded.
 
 ### The matplotlib Window
@@ -89,21 +101,22 @@ To download and run the executable:
 2. Download `predict_gui.vX.X.zip` and unzip to a folder of your choice
 3. In the unzipped folder, open the file `predict_gui.exe`, and the application will launch
 
+To use a new/different model, copy the content of the new model's folder to models/prediction_model/.
+
 ### Building an Executable
 PyInstaller was used to build executables. This needs some tweaking to work with tensorflow 2.0.0:
 * `tensorflow_core` needs to be added as a hidden import; a hook for doing so is in the hooks folder.
 * Importing keras in `predict_gui.py` then needs to be done by importing directly from `tensorflow_core.python`.
 * The import command then looks something like this: `pyinstaller --additional-hooks-dir=some\path\to\GestRec\hooks`
-* Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable. Alternatively, these data dependencies could be specified when building the executable.
+* Not related to tensorflow: once the executable is built, the folders params/, data/ (only containing data/images), and models/ need to be copied into the same directory as the executable.
 * If using pyinstaller to generate a folder, rather than a single file exe, then `tensorflow_core/python/_pywrap_tensorflow_internal.pyd` and `tensorflow_core/python/_pywrap_tensorflow_internal.lib` are large, and can be safely deleted.
 
 ## Areas that need work/Issues to be aware of
 ### GUI issues
 * Furiousness/angularity are calculated only on hand speed and the speed of fingers relative to one another. Thus there are particular ways in which the hands can be move that will be missed by these metrics as they are currently calculated.
 * Text labels are used on the matplotlib GUI to indicate gesture. These should be replaced by symbols representing the gestures.
-* After resizing or interacting with the matplotlib GUI, old gesture labels become visible around the outside, which looks very messy. This is a consequence of using blitting.
-* With blitting, frame rate is acceptable in the matplotlib GUI. But there still exist upper limits on the upper limit of timesteps that can be displayed, and frame rate. This part of the code might be a lot faster if rewritten in pyqtgraph.
+* With blitting, frame rate is acceptable in the matplotlib GUI. But on my laptop there still exist upper limits on the number of timesteps that can be displayed, and frame rate. This part of the code might be a lot faster if rewritten in pyqtgraph.
 ### Model issues
-* If the order of gestures is changed in a gestures txt file (in the params folder), then this will change the indices of gestures, and **a model will no longer predict correctly if it was trained using a file with a different order.**
-* At the moment, there is no information about what model was trained with what gestures, normalization dictionary, or variables of interest. It is therefore difficult to use old models - if the VoI file has changed, then the model will no longer work. A better work flow would see each model saved with its own parameter files.
-* Accuracy isn't great. This might be resolved by using different features, architectures, or more training data from a variety of people. Some gestures are also just objectively difficult for the leap device to pick up; for example, a middle finger vs index finger extended from a fist often look the same to the device, with the middle finger often being mistaken for an index finger.
+* If the order of gestures is changed in a gestures txt file (in the params folder), then this will change the indices of gestures, and a model will no longer predict correctly if it was trained using a file with a different order. This is mitigated somewhat by deploying every model as a folder containing the gestures text file it was trained with.
+* Models for prediction are stored in a folder with a copy of the parameters used to train them. These parameter files must be copied manually. Ideally, this would be automated.
+* Accuracy is pretty good, as long as someone 'knows' the gestures. The models could be trained on a wider variety of training data to make them more robust to different ways of performing gestures. 
