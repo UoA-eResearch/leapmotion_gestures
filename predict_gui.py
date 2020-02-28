@@ -23,20 +23,26 @@ from itertools import cycle
 # The model predicting too often can also cause things to lag a bit. Predicting every 20 frames is safe at present, but could change, depending on the size of the model used.
 
 
-tk_gui = True
+
+# capture every nth frame, slowing input to roughly 25fps
+n = 4
+
+#### set up gui
+
 blit = True
 root = tk.Tk()
 
 # settings = SettingsGUI(root)
-
-if tk_gui:
-    root.geometry("600x500")
-    gui = GUI(root)
+root.geometry("600x500")
+gui = GUI(root)
 
 # Create another window for settings
 settings_window = tk.Toplevel()
 settings_window.geometry("600x400")
 settings_gui = SettingsGUI(settings_window)
+
+
+##### set up model and prediction
 
 model = None
 # load the prediction model
@@ -47,12 +53,9 @@ assert model != None, 'No h5 file found in prediction model folder'
 
 model_path = 'models/prediction_model/'
 # mapping of gestures to integers: need this for decoding model output
-gestures, g2idx, idx2g = get_gestures(version=3, path=model_path)
+gestures, g2idx, idx2g = get_gestures(version='prediction', path=model_path)
 # set whether or not to derive features and drop unused VoI
 derive_features = True
-
-websocket_cache = {}
-
 # which hands will be used in predicting?
 hands = ['left', 'right']
 # Get the VoI that are used as predictors
@@ -67,30 +70,21 @@ else:
 
 # get dictionary with one and two handed derived variables to use in prediction
 derived_feature_dict = get_derived_feature_dict(path=model_path)
-
-
 # get mean and standard deviation dictionaries
 # these are used for standardizing input to model
-with open('params/means_dict.json', 'r') as f:
+with open(model_path + 'means_dict.json', 'r') as f:
     means_dict = json.load(f)
-with open('params/stds_dict.json', 'r') as f:
+with open(model_path + 'stds_dict.json', 'r') as f:
     stds_dict = json.load(f)
-
 
 # no of frames to keep stored in memory for prediction
 keep = model.input.shape[-2]
-# how often to make a prediction (in frames)
-# for now, just set to same frequency as keep
-# pred_interval = 20
-
-
 # set up circular buffer for storing model input data
 model_input_data = CircularBuffer((model.input.shape[-2],model.input.shape[-1]))
 
 # keep track of total no. of frames received
 frames_total = 0
 # no. captured continuously
-# this will be reset if there is an interruption to input
 frames_recorded = 0
 
 # store previous frame, just in case a hand drops out, and we need to vill in values
@@ -98,11 +92,9 @@ previous_frame = None
 # indicator the next successfully received frame will be the first
 first_two_handed_frame = True
 
-# capture every nth frame, depends on what model was trained on
-# 4 is value used for all models so far
-n = 4
- 
-### initialize variables for fury, angularity, and pred confidence calculations
+
+#### initialize variables for fury, angularity, and pred confidence calculations
+
 raw_fury = 0
 fury = 0
 previous_fury = 0
@@ -111,11 +103,6 @@ raw_angularity = 0
 pred_confidence = 0
 adjusted_raw_pred_confidence = 0
 
-# amount of old value to keep when calculating moving averages
-beta_fury = 0.9
-beta_angularity = 0.975
-beta_confidence = 0.98
-
 # set up storage for fury and angularity history
 x_axis_range = settings_gui.settings['x axis range']
 angularity_cb = CircularBuffer((x_axis_range,))
@@ -123,33 +110,35 @@ fury_cb = CircularBuffer((x_axis_range,))
 # also need history of prediction confidence
 confidence_cb = CircularBuffer((x_axis_range,))
 
-# set up plotting
-colour = cycle('bgrcmk')
+
+#### set up plotting
+
 fig, ax = plt.subplots(figsize=(12,8))
+
 plt.ylim(-0.05,1.05)
 whitespace = 40/9
 plt.xlim(-whitespace,x_axis_range + whitespace)
-
 plt.show(block=False)
-
+# colours for labels
+colour = cycle('bgrcmk')
 current_label = plt.text(x_axis_range - 3,0.0,'no_gesture', bbox={'facecolor': next(colour), 'alpha': 0.3, 'pad': 5})
-# old labels that drift across the screen
+# old labels that drift left
 old_labels = []
-# old labels that are now stationary
+# old labels that have finished drifting and are stationary
 stationary_labels = []
-# final x position that old labels drift to
+# final x coordinate that old labels drift to
 final_label_x_position = -10/4
 linewidths=2
-line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
-line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
-line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
-# currently the legend is drawn over as soon as the plot is updated, needs to be fixed
+line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths, color='darkblue')
+line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths, color='orange')
+line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths, color='green')
+# currently the legend is drawn over as soon as the plot is updated, this needs to be fixed
 plt.legend(['angularity', 'movement', 'prediction confidence'], loc='upper left')
 
 gesture = 'no_gesture'
 gesture_change = False
 
-
+websocket_cache = {}
 
 while True:
     # update the gui
@@ -175,7 +164,7 @@ while True:
             fury_cb.add(prev_fury_data[i])
             confidence_cb.add(prev_confidence_data[i])
         
-        # Should be able to remove all old labels, something like this:
+        # remove all old labels
         for old_l in old_labels:
             old_l.remove()
         old_labels = []
@@ -196,9 +185,8 @@ while True:
         # length of packed frame is ~350 if one hand present, ~700 for two
         if len(packed_frame) < 400 and previous_frame == None:
             print('need two hands to start')
-            if tk_gui:
-                gui.label.configure(image=gui.bad)
-                gui.gesture.set('position hands')
+            gui.label.configure(image=gui.bad)
+            gui.gesture.set('position hands')
         # if we have at least one hand, and a previous frame to supplement any missing hand data, then we can proceed
         else:
             # if a hand is missing, fill in the data from the previous frame
@@ -254,7 +242,6 @@ while True:
             pred_confidence = settings_gui.settings['confidence beta'] * pred_confidence + (1 - settings_gui.settings['confidence beta']) * adjusted_raw_pred_confidence
 
             ### Update circular buffers and plot
-            # doing this every 3 frames seems reasonable right now
             if frames_total % settings_gui.settings['graph update interval'] == 0:
                 # buffers
                 fury_cb.add(fury)
@@ -298,9 +285,9 @@ while True:
                 fig.canvas.flush_events()
             
             # update gui for anger and fury
-            if tk_gui:
-                gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
-                gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
+
+            gui.label_fury.configure(foreground="#%02x%02x%02x" % (int(fury * 255),int((1-fury) * 255),0,))
+            gui.label_angularity.configure(foreground="#%02x%02x%02x" % (int(angularity * 255),int((1-angularity) * 255),0,))
 
             previous_complete_frame = packed_frame.copy()
 
@@ -324,7 +311,7 @@ while True:
                 if idx2g[np.argmax(pred)] != gesture:
                     gesture_change = True
                     gesture = idx2g[np.argmax(pred)]
-                if pred[0][np.argmax(pred)] > settings_gui.settings['min conf. to change image'] and tk_gui:
+                if pred[0][np.argmax(pred)] > settings_gui.settings['min conf. to change image']:
                     if not hand_missing:
                         gui.img = tk.PhotoImage(file=f'data/images/{idx2g[np.argmax(pred)]}.png')
                         gui.label.configure(image=gui.img)

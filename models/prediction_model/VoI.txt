@@ -1,0 +1,56 @@
+# this file contains variables to be pulled from the CSV file
+# they will be needed later either as predictors, or to calculate derived features
+
+# fingertip positions
+index_tipPosition_0
+index_tipPosition_1
+index_tipPosition_2
+middle_tipPosition_0
+middle_tipPosition_1
+middle_tipPosition_2
+ring_tipPosition_0
+ring_tipPosition_1
+ring_tipPosition_2
+pinky_tipPosition_0
+pinky_tipPosition_1
+pinky_tipPosition_2
+thumb_tipPosition_0
+thumb_tipPosition_1
+thumb_tipPosition_2
+
+# velocity of palm
+palmVelocity_0
+palmVelocity_1
+palmVelocity_2
+
+# norm of the palm
+palmNormal_0
+palmNormal_1
+palmNormal_2
+
+# direction the hand is pointing in
+direction_0
+direction_1
+direction_2
+
+### these are needed for calculating wrist flexion angle
+# location of the wrist
+wrist_0
+wrist_1
+wrist_2
+
+# location of the elbow
+elbow_0
+elbow_1
+elbow_2
+
+# position of palm
+palmPosition_0
+palmPosition_1
+palmPosition_2
+
+# distance between the thumb and index finger of a pinch hand pose
+pinchDistance
+
+# the angle between the fingers and the hand of a grab hand pose, in [0, pi]
+grabAngle

@@ -1,0 +1,9 @@
+example length: 10
+fps: 5
+hidden_state: 5
+recurrent_dropout: 0.7
+inputs: 50
+outputs: 31
+
+trained without middle finger or drawing
+trained with anon data, so potentially will generalize better

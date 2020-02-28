@@ -1,0 +1,88 @@
+# Note that the order in which gestures appears determines their integer id.
+# If the order of these gestures is changed after a model is trained, this file will not work with that model.
+# Empty lines and lines beggining with '#' are ignored.
+
+#### original 15 gestures
+no_gesture
+call_me
+fist
+gun
+maybe
+ok
+open_close
+peace
+pointing
+shuffle_over
+so_so
+stop
+thumbs_up
+thumbs_down
+wave
+
+#### some additional 'well-defined' gestures
+typing
+# using one hand to 'index' the other
+counting_hands_together
+## temporarily ommitting
+#middle_finger
+# finger drawing includes shapes, lines etc.
+finger_drawing
+
+#### shapes, sizes
+small
+this_big
+# set position shapes, drawn are just part of finger drawing
+triangle_set
+circle_set
+love_heart_set
+
+##### other gestures that can be performed continuously
+multiple
+smoothing_sand
+# like using steering wheel
+driving
+# hands open, upwards
+why
+# path is like this_big, except with forwards and backwards movement
+path
+# Not necessarily leaves, but it helps to identify the action
+gather_leaves
+# replaces drop/place, which were often performed together
+robotic_arm
+# as though drinking water
+cup_hands
+## temporarily ommitting
+# not like finger drawing. Hand position is like holding pen or brush.
+#drawing
+
+
+
+
+
+############# not used #################
+#### directional gestures. Maybe a separate classifier for these? They occur all the time as parts of other gestures.
+# left
+# right
+# up
+# down
+# forward
+# back
+# diagonal
+
+#### drop temporarily, bring in when double leap motion sensor is running? Or maybe ignore. These are also like parts of other gestures.
+# shrink, this is like gather leaves + some kind of holding at the end.
+# expand
+
+
+#### unsure
+# drop
+# cover
+# pause, maybe 'stop' already covers this?
+# counting_hands_apart, not included for now
+
+######## discarded ########
+
+# brush, replaced by drawing
+# push, replaced by gather leaves. Distinguising pushing vs gathering potentially difficult.
+# hold, replaced by cup hands (if I even understood 'hold' correctly to begin with) 
+# wiggle, replaced by finger tracing
