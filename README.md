@@ -14,7 +14,7 @@ raw data -> select variables of interest -> calculate some derived variables -> 
 
 Much of this process is controlled by files in the `params/` folder.
 
-A good place to start is the notebook `exploration-many2one.ipynb`, which works step by step from loading data to training a model.
+A good place to start is the notebook `exploration-many2one.ipynb`, which works step by step from loading data to training a model. Data can be downloaded from [here](https://drive.google.com/drive/folders/1gx3efh6_GlQn0re9NhdmoCJ58lR3FDVp?usp=sharing).
 
 ### raw data -> select variables of interest
 A leap motion device outputs a lof of extraneous information, much of it redundant for prediction. The file `VoI.txt` controls which variables of interest (VoI) will be selected for when using the methods responsible for collecting and processing data from the leap motion device.
