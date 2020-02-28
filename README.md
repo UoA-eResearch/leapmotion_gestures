@@ -8,6 +8,8 @@ The project as it currently stands has two main parts:
 1. Training LSTM based models for recognizing gestures using a leap motion device;
 2. Using such models with a leap motion device in a live environment, such that predictions and other 'affective' information can be viewed in real time.
 
+To see the program in action, check it out on youtube [here](https://youtu.be/3BBsVIJNAhM).
+
 ## Training Data Flow
 It is important to understant how the data from leap motion devices is transformed and used in this project. It looks something like this:
 raw data -> select variables of interest -> calculate some derived variables -> drop unwanted variables -> standardize variables -> split into examples
