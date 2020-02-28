@@ -120,3 +120,5 @@ PyInstaller was used to build executables. This needs some tweaking to work with
 * If the order of gestures is changed in a gestures txt file (in the params folder), then this will change the indices of gestures, and a model will no longer predict correctly if it was trained using a file with a different order. This is mitigated somewhat by deploying every model as a folder containing the gestures text file it was trained with.
 * Models for prediction are stored in a folder with a copy of the parameters used to train them. These parameter files must be copied manually. Ideally, this would be automated.
 * Accuracy is pretty good, as long as someone 'knows' the gestures. The models could be trained on a wider variety of training data to make them more robust to different ways of performing gestures. 
+### Recording issues
+* The gesture parameter file determining what gestures to record is hard coded to version 3.
