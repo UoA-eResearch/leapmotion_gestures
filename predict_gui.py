@@ -176,6 +176,14 @@ while True:
         line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
         line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
         plt.draw()
+    
+    if settings_gui.change_colour == True:
+        settings_gui.change_colour = False
+        # redraw the lines, which will change the colours
+        line_fury, = ax.plot(fury_cb.get(),linewidth=linewidths)
+        line_angularity, = ax.plot(angularity_cb.get(), drawstyle='steps-mid', linestyle='-.', linewidth=linewidths)
+        line_pred, = ax.plot(confidence_cb.get(), linewidth=linewidths)
+
 
 
     
@@ -262,15 +270,18 @@ while True:
                     current_label.set_position((x_axis_range - 3, pred_confidence))
                 for old_l in old_labels:
                     pos = old_l.get_position()
-                    if pos[0] <= final_label_x_position:
+                    old_l.set_position((pos[0] - 1, pos[1]))
+                    if (pos[0] - 1) <= final_label_x_position:
+                        print('added')
                         stationary_labels.append(old_l)
-                    else:
-                        old_l.set_position((pos[0] - 1, pos[1]))
+                        
                 old_labels = [l for l in old_labels if l.get_position()[0] > final_label_x_position]
-                for stationary_l in stationary_labels:
-                    # could do something more than just removing stationary labels
-                    # e.g. could keep them at edge of screen, and fade them out
-                    stationary_l.remove()
+                if settings_gui.settings['labels gather?'] == 0:
+                    for stationary_l in stationary_labels:
+                        # could do something more than just removing stationary labels
+                        # e.g. could keep them at edge of screen, and fade them out
+                        # stationary_l.remove()
+                        pass
                 if blit == True:
                     ax.draw_artist(ax.patch)
                     ax.draw_artist(line_angularity)
@@ -279,6 +290,9 @@ while True:
                     ax.draw_artist(current_label)
                     for label in old_labels:
                         ax.draw_artist(label)
+                    if settings_gui.settings['labels gather?'] == 1:
+                        for label in stationary_labels:
+                            ax.draw_artist(label)
                     fig.canvas.blit(ax.bbox)
                 else:
                     plt.draw()

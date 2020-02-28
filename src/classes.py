@@ -45,6 +45,7 @@ class SettingsGUI:
         # root window of settings gui
         self.master = master
         master.title("settings")
+        self.change_colour = False
 
         # generate spinboxes + labels for some different settings
         self.create_setting('prediction interval', 1, 40, 1, 15)
@@ -56,8 +57,12 @@ class SettingsGUI:
         self.create_setting('effective confidence zero', 0.05, 0.95, 0.05, 0.7)
         self.create_setting('min conf. to change image', 0.0, 0.95, 0.05, 0.55)
         self.create_setting('every nth frame to model', 1, 10, 1, 5)
+        self.create_setting('labels gather?', 0, 1, 1, 0)
 
         self.update_button = tk.Button(self.master, text='Update Settings', command=self.update_settings, font=self.text_format)
+        self.update_button.grid()
+
+        self.update_button = tk.Button(self.master, text='Change Colours', command=self.change_colours, font=self.text_format)
         self.update_button.grid()
     
     def create_setting(self, variable, from_, to, increment, default):
@@ -82,6 +87,9 @@ class SettingsGUI:
                 self.settings[setting] = float(self.sb_dict[setting].get())
             else:
                 self.settings[setting] = int(self.sb_dict[setting].get())
+
+    def change_colours(self):
+        self.change_colour = True
 
 class CircularBuffer:
     """reasonbly efficient circular buffer for storing last n frames or levels of furiosity etc."""
