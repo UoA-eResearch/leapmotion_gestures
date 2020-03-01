@@ -24,7 +24,7 @@ A leap motion device outputs a lof of extraneous information, much of it redunda
 During this stage, the frame rate will also be checked, and every nth frame taken to aproximate a target frame rate. The target frame rate I have used is 5fps. I originally used 25fps, but the higher frame rate isn't helpful.
 
 ### select variables of interest -> calculate some derived variables
-We may want higher level variables that are more informative for our model. Examples of this include using fingertip positions to calculate their distances from the plain the palm of the hand lies on, or their distance to the palm of the hand. This sort of information is much more informative than using the x/y/z coordinates of every fingertip relative to the leap motion device. This process is controlled as follows:
+We may want higher level variables that are more informative for our model. Examples of this include using fingertip positions to calculate their distances from the plane the palm of the hand lies on, or their distance to the palm of the hand. This sort of information is much more informative than using the x/y/z coordinates of every fingertip relative to the leap motion device. This process is controlled as follows:
 
 * `params/derived_features_one_handed.txt` contains the list of methods to apply to the data that will generate new one handed features (e.g. distances between the thumb and index fingers on the same hand)
 * `params/derived_features_two_handed.txt` contains the list of methods to apply to the data that will generate new two handed features (e.g. distances between the left and right index fingers)
@@ -96,7 +96,7 @@ The prediction/GUI portion of this project is available as an executable file in
 
 ### Using an executable
 First, install the leap motion SDK, if you have not done so already:
-1. Download V4 of the leap motion SDK from [here](https://developer.leapmotion.com/setup/desktop) (this may require you to make an account)
+1. Download V4 (v4.0.0+52173 has been tested and works) of the leap motion SDK from [here](https://developer.leapmotion.com/setup/desktop) (this may require you to make an account)
 2. After installing the leap motion SDK, open the Leap Motion Control Panel, tick 'Allow Web Apps', and click Apply
 
 To download and run the executable:
